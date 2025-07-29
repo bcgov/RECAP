@@ -1,0 +1,92 @@
+# GitOps Repository - Kubernetes Manifests and Configuration
+
+# IDE and Editor files
+.vs/
+.vscode/
+*.suo
+*.user
+*.rsuser
+*.userosscache
+*.sln.docstates
+*.userprefs
+.claude/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Environment and Secret files
+*.env
+*.env.local
+*.env.*.local
+
+# Helm related
+charts/*/charts
+charts/*/Chart.lock
+charts/*/requirements.lock
+requirements.lock
+Chart.lock
+
+# Helm dependencies
+**/charts/*.tgz
+
+# ArgoCD temporary files
+.argocd-source-*
+app-of-apps/
+
+# Flux temporary files
+.flux/
+
+# Kustomize build output
+kustomization.yaml.bak
+kustomization.yml.bak
+kustomize-build-output/
+build/
+
+# Terraform (if using IaC with GitOps)
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+*.tfplan
+*.tfvars
+
+# Temporary files
+*~
+*.tmp
+*.temp
+*.swp
+*.swo
+*#
+.#*
+
+# Log files
+*.log
+logs/
+
+# Generated files
+generated/
+auto-generated/
+
+# Tool specific directories
+.git-crypt/
+.sops/
+
+# Node modules (if using any JS tooling)
+node_modules/
+
+# Python (if using Python tooling)
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Container/Docker related
+.dockerignore

@@ -1,0 +1,58 @@
+# RECAP Web Proxy with OLLAMA
+# Following EPIC.search BC Gov pattern
+
+version: '3.8'
+
+services:
+  # OLLAMA Model Service
+  recap-ollama:
+    build:
+      context: ./model
+      dockerfile: Dockerfile
+      args:
+        MODEL_NAME: qwen2.5
+        MODEL_VERSION: 0.5b
+    container_name: recap-ollama
+    environment:
+      - OLLAMA_KEEP_ALIVE=-1
+      - MODEL_NAME=qwen2.5
+      - MODEL_VERSION=0.5b
+    volumes:
+      - llm-data:/root/.ollama
+    ports:
+      - "11434:11434"
+    networks:
+      - recap-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # NGINX Proxy Service  
+  recap-proxy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: recap-proxy
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./index.html:/usr/share/nginx/html/index.html:ro
+    networks:
+      - recap-network
+    depends_on:
+      recap-ollama:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  llm-data:
+    driver: local
+
+networks:
+  recap-network:
+    driver: bridge
