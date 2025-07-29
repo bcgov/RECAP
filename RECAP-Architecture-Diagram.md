@@ -16,11 +16,22 @@
 - **Responsible AI**: Content Filtering, Abuse Detection, Usage Analytics
 
 **Data Flow:**
-👤 External Users → 🌐 Azure Web App → 🔗 Private Endpoint → ⚙️ API Management → 🤖 GPT-4o → 🛡️ Responsible AI
+👤 External Users → 🌐 Project Application → 🌐 Azure Web App → 🔗 Private Endpoint → ⚙️ API Management → 🤖 GPT-4o → 🛡️ Responsible AI
 
 ```mermaid
 graph LR
-    Users["👤 External Users"] -->|HTTPS| WebApp
+    User["👤 User"]
+    
+    subgraph "OpenShift Container Platform"
+        subgraph "Project Name Space"
+            Frontend["Frontend"]
+            Backend["Backend"]        
+            Frontend <--> Backend
+        end
+    end
+    
+    User --> Frontend
+    Backend -->|HTTPS| WebApp
     
     subgraph "BC Gov Azure Landing Zone"
         subgraph "d837ad-test-vwan-spoke VNet"
@@ -80,7 +91,7 @@ graph LR
 
 ```mermaid
 sequenceDiagram
-    participant U as 👤 User
+    participant U as 👤 Backend Service
     participant W as 🌐 Web App<br/>(Nginx Proxy)
     participant P as 🔗 Private Endpoint<br/>(10.46.75.68)
     participant A as ⚙️ API Management
@@ -123,7 +134,7 @@ sequenceDiagram
 
 ```mermaid
 graph LR
-    subgraph "Internet"
+    subgraph "BC Gov Network"
         Users["👤 Users"]
     end
     
