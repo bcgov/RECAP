@@ -19,7 +19,9 @@
 👤 External Users → 🌐 Azure Web App → 🔗 Private Endpoint → ⚙️ API Management → 🤖 GPT-4o → 🛡️ Responsible AI
 
 ```mermaid
-graph TB
+graph LR
+    Users["👤 External Users"] -->|HTTPS| WebApp
+    
     subgraph "BC Gov Azure Landing Zone"
         subgraph "d837ad-test-vwan-spoke VNet"
             subgraph "webapp-integration-subnet (10.46.75.128/26)"
@@ -40,7 +42,6 @@ graph TB
         end
     end
     
-    Users["👤 External Users"] -->|HTTPS| WebApp
     WebApp -->|VNet Integration| PE
     PE -->|Private Link| APIM
     APIM --> GPT
