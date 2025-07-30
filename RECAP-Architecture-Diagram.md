@@ -6,11 +6,12 @@
 - **VNet**: d837ad-test-vwan-spoke
   - **webapp-integration-subnet** (10.46.75.128/26)
     - **Azure Web App**: d837ad-test-recap-webapp
-    - **Nginx Proxy Container**: Authentication, Header mapping, Token tracking
+    - **Nginx Proxy Container**: Authentication, Header mapping, Token tracking, Connection pooling
   - **private-endpoint-subnet** (10.46.75.64/26)
-    - **Private Endpoint**: d837ad-test-recap-llm-east-pe (IP: 10.46.75.68)
+    - **Private Endpoint**: d837ad-test-econ-llm-east-pe (IP: 10.46.75.69)
+    - **Network Security Group**: d837ad-test-econ-llm-east-nsg
 
-**Azure OpenAI Service** (d837ad-test-recap-llm-east)
+**Azure OpenAI Service** (d837ad-test-econ-llm-east)
 - **API Management**: Private Endpoint Support, DNS Management, Rate Limiting
 - **GPT-4o Model**: Chat Completions, Token Usage, Performance Metrics
 - **Responsible AI**: Content Filtering, Abuse Detection, Usage Analytics
@@ -40,13 +41,13 @@ graph LR
             end
             
             subgraph "private-endpoint-subnet (10.46.75.64/26)"
-                PE["🔗 Private Endpoint<br/>d837ad-test-recap-llm-east-pe<br/>IP: 10.46.75.68<br/><br/>DNS Resolution &<br/>Private Connectivity"]
+                PE["🔗 Private Endpoint<br/>d837ad-test-econ-llm-east-pe<br/>IP: 10.46.75.69<br/><br/>DNS Resolution &<br/>Private Connectivity"]
             end
         end
     end
     
     subgraph "Azure OpenAI Service"
-        subgraph "d837ad-test-recap-llm-east"
+        subgraph "d837ad-test-econ-llm-east"
             APIM["⚙️ API Management<br/>• Private Endpoint Support<br/>• DNS Management<br/>• Rate Limiting"]
             GPT["🤖 GPT-4o Model<br/>• Chat Completions<br/>• Token Usage<br/>• Performance Metrics"]
             RAI["🛡️ Responsible AI<br/>• Content Filtering<br/>• Abuse Detection<br/>• Usage Analytics"]
@@ -93,7 +94,7 @@ graph LR
 sequenceDiagram
     participant U as 👤 Backend Service
     participant W as 🌐 Web App<br/>(Nginx Proxy)
-    participant P as 🔗 Private Endpoint<br/>(10.46.75.68)
+    participant P as 🔗 Private Endpoint<br/>(10.46.75.69)
     participant A as ⚙️ API Management
     participant G as 🤖 GPT-4o Model
     participant R as 🛡️ Responsible AI
@@ -122,10 +123,10 @@ sequenceDiagram
 **BC Gov Azure Landing Zone:**
 - **VNet**: d837ad-test-vwan-spoke
   - **webapp-integration subnet** (10.46.75.128/26): Web App with Nginx Container
-  - **private-endpoint subnet** (10.46.75.64/26): Private Endpoint (10.46.75.68)
+  - **private-endpoint subnet** (10.46.75.64/26): Private Endpoint (10.46.75.69)
 
 **Azure OpenAI Platform:**
-- **Service**: d837ad-test-recap-llm-east
+- **Service**: d837ad-test-econ-llm-east
 - **Public Access**: DISABLED
 - **Private Access**: ENABLED via Private Link
 
@@ -145,13 +146,13 @@ graph LR
             end
             
             subgraph "Subnet: private-endpoint<br/>10.46.75.64/26" 
-                PE["🔗 Private Endpoint<br/>10.46.75.68"]
+                PE["🔗 Private Endpoint<br/>10.46.75.69"]
             end
         end
     end
     
     subgraph "Azure OpenAI Platform"
-        OpenAI["🤖 Azure OpenAI Service<br/>d837ad-test-recap-llm-east<br/><br/>Public Access: DISABLED<br/>Private Access: ENABLED"]
+        OpenAI["🤖 Azure OpenAI Service<br/>d837ad-test-econ-llm-east<br/><br/>Public Access: DISABLED<br/>Private Access: ENABLED"]
     end
     
     Users -->|HTTPS| WebApp
@@ -171,18 +172,24 @@ graph LR
 
 ### Web Application Tier
 - **Azure Web App**: `d837ad-test-recap-webapp.azurewebsites.net`
-- **Container**: Nginx proxy with authentication handling
+- **Container**: Nginx proxy with authentication handling and connection pooling
 - **VNet Integration**: Connected to `webapp-integration-subnet`
+
+#### Nginx Configuration
+- **Proxy Features**: Authentication, header mapping, token tracking
+- **Connection Management**: Upstream configuration with connection pooling for reliable private endpoint connectivity
+- **SSL Handling**: Optimized for Azure OpenAI private endpoint requirements
 
 ### Network Tier  
 - **Virtual Network**: `d837ad-test-vwan-spoke` 
 - **Subnets**: 
   - `webapp-integration-subnet` (10.46.75.128/26)
   - `private-endpoint-subnet` (10.46.75.64/26)
-- **Private Endpoint**: `d837ad-test-recap-llm-east-pe` (10.46.75.68)
+- **Private Endpoint**: `d837ad-test-econ-llm-east-pe` (10.46.75.69)
+- **Network Security Group**: `d837ad-test-econ-llm-east-nsg`
 
 ### AI Service Tier
-- **Azure OpenAI**: `d837ad-test-recap-llm-east`
+- **Azure OpenAI**: `d837ad-test-econ-llm-east`
 - **API Management**: Full private endpoint support with DNS management
 - **Model**: GPT-4o deployment with rate limiting and usage analytics
 - **Security**: Public access disabled, private endpoint connectivity enabled
@@ -197,3 +204,6 @@ graph LR
 - Secure private endpoint connectivity
 - Comprehensive API management and monitoring
 - Scalable container-based web application tier
+
+## Related Documentation
+- **[Connection Pooling Solution](Connection-Pooling-Solution.md)**: Technical details on resolving intermittent private endpoint connectivity issues

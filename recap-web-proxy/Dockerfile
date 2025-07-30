@@ -2,10 +2,10 @@ FROM nginx:1.25-alpine
 
 COPY nginx.conf /etc/nginx/nginx.conf
 COPY index.html /usr/share/nginx/html/index.html
-COPY startup.sh /startup.sh
+COPY entrypoint.sh /entrypoint.sh
 
-RUN chmod +x /startup.sh
+RUN chmod +x /entrypoint.sh
 
 EXPOSE 80
 
-CMD ["/startup.sh"]
+ENTRYPOINT ["/entrypoint.sh"]
