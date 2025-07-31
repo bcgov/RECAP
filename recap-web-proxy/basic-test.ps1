@@ -8,12 +8,12 @@ $headers = @{
 $chatBody = @{
     messages = @(@{
         role = "user"
-        content = "hello"
+        content = "Tell me a new joke about cats."
     })
     max_tokens = 50
 } | ConvertTo-Json
 
-Write-Host "Testing 'hello' prompt through RECAP proxy..." -ForegroundColor Cyan
+Write-Host "Testing 'Question' prompt through RECAP proxy..." -ForegroundColor Cyan
 
 try {
     $response = Invoke-WebRequest -Uri "https://d837ad-test-recap-webapp.azurewebsites.net/openai/deployments/gpt-4o/chat/completions?api-version=2024-02-01" -Method POST -Headers $headers -Body $chatBody -UseBasicParsing

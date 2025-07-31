@@ -14,22 +14,16 @@ if (-not $azAccount) {
     Write-Host "Already logged in to Azure." -ForegroundColor Green
 }
 
-
-# ====== USER CONFIGURATION ======
-# Set these variables as needed before running the script. No prompting will occur.
-$subscriptionId = "5445292b-8313-4272-96aa-f30efd1e1654"
-$resourceGroup = "d837ad-test-networking"
-$region = "canadacentral"                    # Adjust this to your region as needed
-$acrName = "d837adcontainers"
+# Docker image and ACR details
 $containerName = "nginx-container"
-$localImage = "recap-web-proxy:latest"       # Change if your local image name is different
+$resourceGroup = "d837ad-test-networking"
+$localImage = "recap-web-proxy:latest"  # Change if your local image name is different
 
-# Set the subscription if specified
-if ($subscriptionId -and $subscriptionId -notmatch '^<.*>$') {
-    az account set --subscription $subscriptionId
-}
-az account show --query "{name:name, id:id, state:state, isDefault:isDefault, user:user}" --output json
-
+# Azure must be able to pull the image from a registry that it can access, such as:
+# - Azure Container Registry (ACR)
+# - Docker Hub (public or authenticated)
+# - Another public/private registry accessible from Azure
+$acrName = "d837adcontainers"
 $acrLoginServer = "$acrName.azurecr.io"
 $acrImage = "$acrLoginServer/recap-web-proxy:latest"
 
@@ -117,27 +111,12 @@ az container create `
   --registry-password $acrPassword `
   --ip-address public `
   --dns-name-label $dnsNameLabel `
-  --ports 80 443 `
+  --ports 8080 `
   --os-type Linux `
   --cpu 1 `
-  --memory 1.0 `
-  --location $region
+  --memory 1.0
 if ($?) {
-    Write-Host "DEBUG: dnsNameLabel value is '$dnsNameLabel'" -ForegroundColor Cyan
-    if ($dnsNameLabel -and $dnsNameLabel -notmatch '^\s*$' -and $dnsNameLabel -ne 'null') {
-        $fqdn = "$dnsNameLabel.$region.azurecontainer.io"
-        Write-Host "Container $containerName created successfully. FQDN: $fqdn" -ForegroundColor Green
-        $url = "http://{0}:80/" -f $fqdn
-        Write-Host "Testing HTTP GET to $url ..." -ForegroundColor Yellow
-        try {
-            $response = Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 10
-            Write-Host "HTTP GET to $url succeeded. Status code: $($response.StatusCode)" -ForegroundColor Green
-        } catch {
-            Write-Host "HTTP GET to $url failed: $($_.Exception.Message)" -ForegroundColor Red
-        }
-    } else {
-        Write-Host "FQDN is empty or invalid, skipping HTTP GET test." -ForegroundColor Yellow
-    }
+    Write-Host "Container $containerName created successfully. FQDN: $dnsNameLabel.$($resourceGroup.ToLower()).azurecontainer.io" -ForegroundColor Green
 } else {
     Write-Host "Failed to create container $containerName." -ForegroundColor Red
     exit 1
