@@ -5,35 +5,94 @@ RECAP LLM Responsible Evaluation And Consolidated Analytics Platform
 
 The project is in the very early stages of development. The codebase will be changing frequently.
 
-## Architecture Separation
+## Repository Structure
 
-This repository is organized into separate deployment concerns:
+This repository is organized with clear separation of concerns:
 
-### `recap-llm/` - Azure OpenAI Service Only
-Handles **only** the Azure OpenAI service creation (Cognitive Services account and model deployment).
+```
+RECAP/
+├── recap-subnet-nsg/                    ← Networking infrastructure
+│   ├── networking-config.ps1            ← Subnets, NSGs, security rules
+│   └── private-endpoint-deploy.ps1      ← Private endpoints
+├── recap-llm/                           ← OpenAI service only
+│   └── openai-deploy.ps1                ← Azure OpenAI service deployment
+└── recap-web-proxy/                     ← Web app and proxy
+    ├── nginx-generate-config.ps1        ← Environment-specific nginx config
+    ├── acr-container-push.ps1            ← Container build and ACR push
+    ├── webapp-deploy.ps1                 ← Azure Web App deployment
+    └── proxy-llm-basic-test.ps1          ← End-to-end connectivity testing
+```
 
-**Scripts:**
-- `deploy-azure-openai.ps1` - Creates Azure OpenAI service with public access disabled
-  - **When to use:** First step in any environment deployment
-  - **Usage:** `.\deploy-azure-openai.ps1 -Environment test`
-  - **Creates:** `d837ad-{Environment}-econ-llm-east` with GPT-4o deployment
+### `recap-subnet-nsg/` - Networking Foundation
+**Creates the network infrastructure that everything else depends on:**
+- Virtual network subnets with optimized IP allocation
+- Network Security Groups with BC Gov compliant security rules
+- Private endpoints for secure Azure service connectivity
+- SPANBC network access (142.22.0.0/16)
 
-### `recap-web-proxy/` - Networking and Proxy Infrastructure
-Handles all networking, private endpoints, and nginx proxy deployment.
+### `recap-llm/` - Azure OpenAI Service
+**Handles Azure OpenAI service deployment only:**
+- Creates Cognitive Services account with BC Gov policy compliance
+- Configures public access disabled and network ACLs
+- Supports model deployments (GPT-4o, gpt-4o-mini)
 
-**Scripts:**
-- Private endpoint deployment scripts
-- `nginx.conf` with connection pooling configuration  
-- `az-web-app-create.ps1` - Azure Web App deployment
-- `az-container-create.ps1` - nginx proxy container deployment
-- `basic-test.ps1` - End-to-end connectivity testing
+**Model Cost Comparison (2025 Pricing):**
+- **GPT-4o**: $2.50 input / $10.00 output per million tokens (Standard SKU)
+- **GPT-4o-mini**: $0.15 input / $0.60 output per million tokens (GlobalStandard SKU)
+- **Cost savings**: gpt-4o-mini is ~94% cheaper than gpt-4o (16x cheaper per token)
 
-**When to use:** After OpenAI service is created, deploy networking components
+**SKU Requirements:**
+- GPT-4o uses Standard SKU (regional data residency)
+- GPT-4o-mini requires GlobalStandard SKU in Canada East for better load balancing and availability
 
-## Deployment Sequence
+### `recap-web-proxy/` - Application Layer
+**Manages the proxy application and web app deployment:**
+- Nginx proxy with connection pooling and SSL termination
+- Docker container build and Azure Container Registry operations
+- Azure Web App with VNet integration
+- End-to-end testing and validation
 
-1. **Deploy Azure OpenAI Service:** Use `recap-llm/deploy-azure-openai.ps1`
-2. **Deploy private endpoint:** Use scripts in `recap-web-proxy/`
-3. **Deploy nginx proxy container:** With connection pooling for reliability
-4. **Configure web app:** With OpenAI endpoint and API key
-5. **Test connectivity:** Using `recap-web-proxy/basic-test.ps1`
+## Quick Start Deployment
+
+**Complete deployment sequence:**
+
+```powershell
+# Step 1: Create networking foundation
+.\recap-subnet-nsg\networking-config.ps1 -Environment "prod"
+.\recap-subnet-nsg\private-endpoint-deploy.ps1 -Environment "prod"
+
+# Step 2: Deploy OpenAI service
+.\recap-llm\openai-deploy.ps1 -Environment "prod"
+
+# Step 3: Build and deploy web application
+.\recap-web-proxy\nginx-generate-config.ps1 -Environment "prod"
+.\recap-web-proxy\acr-container-push.ps1 -Environment "prod"
+.\recap-web-proxy\webapp-deploy.ps1 -Environment "prod"
+
+# Step 4: Test deployment
+.\recap-web-proxy\proxy-llm-basic-test.ps1 -Environment "prod" -Model "both"
+```
+
+**Prerequisites:**
+- Azure CLI installed and authenticated (`az login`)
+- Docker Desktop running (for container operations)
+- PowerShell execution policy allows script execution
+- Contributor access to target Azure subscription
+
+## Troubleshooting
+
+### OpenAI Service Name Already Exists
+If you encounter an error that the OpenAI service name is already in use due to a previous deletion, you need to purge the soft-deleted service first:
+
+```powershell
+# Check for soft-deleted OpenAI services
+az cognitiveservices account list-deleted --query "[?contains(name, 'd837ad') && contains(name, 'econ-llm-east')]"
+
+# Purge the soft-deleted service to free up the name
+az cognitiveservices account purge --name "d837ad-{Environment}-econ-llm-east" --resource-group "d837ad-{Environment}-networking" --location "canadaeast"
+
+# Example for prod environment:
+az cognitiveservices account purge --name "d837ad-prod-econ-llm-east" --resource-group "d837ad-prod-networking" --location "canadaeast"
+```
+
+This immediately frees up the service name for reuse instead of waiting 30+ days for automatic purging.

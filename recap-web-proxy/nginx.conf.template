@@ -13,7 +13,7 @@ http {
 
   # Upstream configuration for private endpoint with connection management
   upstream azure_openai_backend {
-    server 10.46.76.4:443;
+    server {{PRIVATE_ENDPOINT_IP}}:443;
     keepalive 32;
     keepalive_requests 1000;
     keepalive_timeout 60s;
@@ -27,7 +27,7 @@ http {
     location /openai/ {      
       # Forward the full path as-is to the backend using upstream
       proxy_pass https://azure_openai_backend;
-      proxy_set_header Host d837ad-prod-econ-llm-east.openai.azure.com;
+      proxy_set_header Host {{OPENAI_SERVICE_HOST}};
       proxy_set_header X-Real-IP $remote_addr;
       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
       proxy_set_header X-Forwarded-Proto $scheme;
@@ -41,7 +41,7 @@ http {
       
       # SSL Configuration for private endpoint
       proxy_ssl_server_name on;
-      proxy_ssl_name d837ad-prod-econ-llm-east.openai.azure.com;
+      proxy_ssl_name {{OPENAI_SERVICE_HOST}};
       proxy_ssl_protocols TLSv1.2 TLSv1.3;
       proxy_ssl_verify off;
       proxy_ssl_session_reuse on;
@@ -60,7 +60,7 @@ http {
 
     # Test endpoint to verify proxy is working
     location /api/test {
-      return 200 "RECAP Proxy is working! Azure OpenAI endpoint: d837ad-prod-econ-llm-east.openai.azure.com\n";
+      return 200 "RECAP Proxy is working! Azure OpenAI endpoint: {{OPENAI_SERVICE_HOST}}\n";
       add_header Content-Type text/plain;
     }
 
