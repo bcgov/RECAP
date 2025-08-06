@@ -4,7 +4,7 @@
 
 param(
     [Parameter(Mandatory=$true)]
-    [ValidateSet("test", "prod", "dev")]
+    [ValidateSet("test", "prod")]
     [string]$Environment,
     
     [Parameter(Mandatory=$false)]
@@ -13,6 +13,42 @@ param(
 
 Write-Host "=== RECAP COMPLETE RESOURCE CLEANUP ===" -ForegroundColor Red
 Write-Host "Environment: $Environment" -ForegroundColor Yellow
+
+# Verify we're connected to the correct Azure subscription
+Write-Host "Verifying Azure subscription..." -ForegroundColor Cyan
+try {
+    $currentSubscriptionName = az account show --query "name" --output tsv 2>$null
+    $expectedSubscriptionName = "d837ad-$Environment - RECAP LLM Responsible Evaluation And Consolidated"
+    
+    if ($currentSubscriptionName -notlike "*d837ad-$Environment*") {
+        Write-Host "❌ ERROR: Connected to wrong Azure subscription!" -ForegroundColor Red
+        Write-Host "Current subscription: $currentSubscriptionName" -ForegroundColor Yellow
+        Write-Host "Expected subscription: $expectedSubscriptionName" -ForegroundColor Yellow
+        Write-Host "" -ForegroundColor White
+        Write-Host "Running az login to switch subscriptions..." -ForegroundColor Cyan
+        
+        az login
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "❌ Azure login failed. Exiting script." -ForegroundColor Red
+            exit 1
+        }
+        
+        # Re-check subscription after login
+        $currentSubscriptionName = az account show --query "name" --output tsv 2>$null
+        if ($currentSubscriptionName -notlike "*d837ad-$Environment*") {
+            Write-Host "❌ Still not connected to correct subscription after login." -ForegroundColor Red
+            Write-Host "Please run: az account set --subscription `"d837ad-$Environment`"" -ForegroundColor Cyan
+            exit 1
+        }
+        Write-Host "✅ Now connected to correct subscription: $currentSubscriptionName" -ForegroundColor Green
+    } else {
+        Write-Host "✅ Connected to correct subscription: $currentSubscriptionName" -ForegroundColor Green
+    }
+} catch {
+    Write-Host "❌ Not logged in to Azure. Please run: az login" -ForegroundColor Red
+    exit 1
+}
+
 Write-Host "" -ForegroundColor White
 
 # Resource names based on environment

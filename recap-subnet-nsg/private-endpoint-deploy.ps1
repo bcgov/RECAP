@@ -3,7 +3,7 @@
 
 param(
     [Parameter(Mandatory=$true)]
-    [ValidateSet("test", "prod", "dev")]
+    [ValidateSet("test", "prod")]
     [string]$Environment,
     
     [Parameter(Mandatory=$false)]
@@ -107,7 +107,7 @@ if ($LASTEXITCODE -ne 0) {
 
 Write-Host "✅ Private endpoint created successfully!" -ForegroundColor Green
 
-# Configure OpenAI network access rule for private endpoint
+# Configure OpenAI network access rules
 Write-Host "`nConfiguring OpenAI network access for private endpoint..." -ForegroundColor Cyan
 $networkRuleResult = az cognitiveservices account network-rule add `
     --name $openAIName `
@@ -116,9 +116,24 @@ $networkRuleResult = az cognitiveservices account network-rule add `
     --subnet $subnetName 2>&1
 
 if ($LASTEXITCODE -eq 0) {
-    Write-Host "✅ OpenAI network access rule added successfully" -ForegroundColor Green
+    Write-Host "✅ OpenAI network access rule added for private endpoint subnet" -ForegroundColor Green
 } else {
-    Write-Host "⚠️ Failed to add OpenAI network rule (may already exist): $networkRuleResult" -ForegroundColor Yellow
+    Write-Host "⚠️ Failed to add OpenAI network rule for private endpoint (may already exist): $networkRuleResult" -ForegroundColor Yellow
+}
+
+# Also add network rule for web app integration subnet
+$webAppSubnetName = "d837ad-$Environment-webapp-integration-subnet"
+Write-Host "Configuring OpenAI network access for web app integration..." -ForegroundColor Cyan
+$webAppNetworkRuleResult = az cognitiveservices account network-rule add `
+    --name $openAIName `
+    --resource-group $ResourceGroup `
+    --vnet $vnetName `
+    --subnet $webAppSubnetName 2>&1
+
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "✅ OpenAI network access rule added for web app integration subnet" -ForegroundColor Green
+} else {
+    Write-Host "⚠️ Failed to add OpenAI network rule for web app integration (may already exist): $webAppNetworkRuleResult" -ForegroundColor Yellow
 }
 
 # Wait a moment for DNS to propagate

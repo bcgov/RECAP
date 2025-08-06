@@ -3,7 +3,7 @@
 
 param(
     [Parameter(Mandatory=$true)]
-    [ValidateSet("test", "prod", "dev")]
+    [ValidateSet("test", "prod")]
     [string]$Environment,
     
     [Parameter(Mandatory=$false)]
@@ -21,12 +21,21 @@ Write-Host "Environment: $Environment" -ForegroundColor Yellow
 Write-Host "Resource Group: $ResourceGroup" -ForegroundColor Yellow
 Write-Host "VNet: $VNetName" -ForegroundColor Yellow
 
-# Network configuration based on RECAP documentation
-$vnetAddressSpace = "10.46.76.0/24"
+# Network configuration based on RECAP documentation - environment specific IP ranges
+switch ($Environment) {
+    "test" {
+        $vnetAddressSpace = "10.46.75.0/24"
+        $privateEndpointSubnetPrefix = "10.46.75.0/27"
+        $webAppSubnetPrefix = "10.46.75.32/28"
+    }
+    "prod" {
+        $vnetAddressSpace = "10.46.76.0/24"
+        $privateEndpointSubnetPrefix = "10.46.76.0/27"
+        $webAppSubnetPrefix = "10.46.76.32/28"
+    }
+}
 $privateEndpointSubnetName = "d837ad-$Environment-private-endpoint-subnet"
-$privateEndpointSubnetPrefix = "10.46.76.0/27"
-$webAppSubnetName = "d837ad-$Environment-webapp-integration-subnet" 
-$webAppSubnetPrefix = "10.46.76.32/28"
+$webAppSubnetName = "d837ad-$Environment-webapp-integration-subnet"
 
 # NSG names
 $privateEndpointNsgName = "d837ad-$Environment-pe-nsg"

@@ -3,7 +3,7 @@
 
 param(
     [Parameter(Mandatory=$true)]
-    [ValidateSet("test", "prod", "dev")]
+    [ValidateSet("test", "prod")]
     [string]$Environment,
     
     [Parameter(Mandatory=$false)]
@@ -62,20 +62,18 @@ try {
         -replace '\{\{PRIVATE_ENDPOINT_IP\}\}', $privateEndpointIP `
         -replace '\{\{OPENAI_SERVICE_HOST\}\}', $openAIServiceHost
     
-    # Create backup with environment and date
+    # Create timestamped backup file name
     $dateString = Get-Date -Format "yyyyMMdd-HHmmss"
     $backupFileName = Join-Path (Split-Path $scriptDir -Parent) "deploy-$Environment-nginx-conf-$dateString.log"
     $nginxConfPath = Join-Path $scriptDir "nginx.conf"
     
-    # Backup existing nginx.conf if it exists
-    if (Test-Path $nginxConfPath) {
-        Copy-Item $nginxConfPath $backupFileName -Force
-        Write-Host "✅ Created backup: $backupFileName" -ForegroundColor Green
-    }
-    
     # Write processed nginx.conf
     $processedContent | Set-Content $nginxConfPath -NoNewline
     Write-Host "✅ Generated nginx.conf for $Environment environment" -ForegroundColor Green
+    
+    # Always create timestamped backup copy of the generated config
+    Copy-Item $nginxConfPath $backupFileName -Force
+    Write-Host "✅ Created timestamped backup: $backupFileName" -ForegroundColor Green
     
 } catch {
     Write-Host "ERROR: Failed to process template: $($_.Exception.Message)" -ForegroundColor Red

@@ -1,6 +1,6 @@
 param(
     [string]$ApiKey,
-    [ValidateSet("test", "prod", "dev")]
+    [ValidateSet("test", "prod")]
     [string]$Environment = "prod",
     [ValidateSet("gpt-4o", "gpt-4o-mini", "both")]
     [string]$Model = "both",

@@ -4,7 +4,7 @@
 
 param(
     [Parameter(Mandatory=$true)]
-    [ValidateSet("test", "prod", "dev")]
+    [ValidateSet("test", "prod")]
     [string]$Environment
 )
 
@@ -17,6 +17,41 @@ Write-Output "RECAP Complete Deployment Script"
 Write-Output "Environment: $Environment"
 Write-Output "Log file: $logFile"
 Write-Output ""
+
+# Verify we're connected to the correct Azure subscription
+Write-Output "Verifying Azure subscription..." | Tee-Object -FilePath $logFile -Append
+try {
+    $currentSubscriptionName = az account show --query "name" --output tsv 2>$null
+    $expectedSubscriptionName = "d837ad-$Environment - RECAP LLM Responsible Evaluation And Consolidated"
+    
+    if ($currentSubscriptionName -notlike "*d837ad-$Environment*") {
+        Write-Output "❌ ERROR: Connected to wrong Azure subscription!" | Tee-Object -FilePath $logFile -Append
+        Write-Output "Current subscription: $currentSubscriptionName" | Tee-Object -FilePath $logFile -Append
+        Write-Output "Expected subscription: $expectedSubscriptionName" | Tee-Object -FilePath $logFile -Append
+        Write-Output "" | Tee-Object -FilePath $logFile -Append
+        Write-Output "Running az login to switch subscriptions..." | Tee-Object -FilePath $logFile -Append
+        
+        az login
+        if ($LASTEXITCODE -ne 0) {
+            Write-Output "❌ Azure login failed. Exiting script." | Tee-Object -FilePath $logFile -Append
+            exit 1
+        }
+        
+        # Re-check subscription after login
+        $currentSubscriptionName = az account show --query "name" --output tsv 2>$null
+        if ($currentSubscriptionName -notlike "*d837ad-$Environment*") {
+            Write-Output "❌ Still not connected to correct subscription after login." | Tee-Object -FilePath $logFile -Append
+            Write-Output "Please run: az account set --subscription `"d837ad-$Environment`"" | Tee-Object -FilePath $logFile -Append
+            exit 1
+        }
+        Write-Output "✅ Now connected to correct subscription: $currentSubscriptionName" | Tee-Object -FilePath $logFile -Append
+    }
+    
+    Write-Output "✅ Subscription: $currentSubscriptionName" | Tee-Object -FilePath $logFile -Append
+} catch {
+    Write-Output "❌ Not logged in to Azure. Please run: az login" | Tee-Object -FilePath $logFile -Append
+    exit 1
+}
 
 # Function to run command with logging and error handling
 function Invoke-StepWithLogging {
