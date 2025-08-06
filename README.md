@@ -5,6 +5,17 @@ RECAP LLM Responsible Evaluation And Consolidated Analytics Platform
 
 The project is in the very early stages of development. The codebase will be changing frequently.
 
+## Documentation
+
+📚 **Complete documentation is available in the [`documentation/`](./documentation/) folder:**
+
+- **[Azure Landing Zone Documentation](./documentation/RECAP-Azure-LandingZone.md)** - Comprehensive Azure infrastructure architecture, cost analysis, and deployment details
+- **[Architecture Diagram](./documentation/RECAP-Architecture-Diagram.md)** - System architecture overview and component relationships  
+- **[VNet Solution](./documentation/RECAP-VNet-Solution.md)** - Virtual network configuration and security implementation
+- **[Connection Pooling Solution](./documentation/RECAP-Connection-Pooling-Solution.md)** - Optimized connection management for Azure OpenAI
+- **[Multi-Client Solution](./documentation/RECAP-multi-client-solution.md)** - Multi-tenant architecture and client isolation
+- **[GitOps Deployment Flow](./documentation/RECAP-GitOps-deployment-Flow.md)** - CI/CD pipeline and automated deployment processes
+
 ## Repository Structure
 
 This repository is organized with clear separation of concerns:
