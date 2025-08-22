@@ -58,7 +58,10 @@ RECAP/
 
 ### `recap-web-proxy/` - Application Layer
 **Manages the proxy application and web app deployment:**
-- Nginx proxy with connection pooling and SSL termination
+- Nginx proxy with connection pooling, SSL termination, and BCgov security controls
+  - IP whitelisting for BC government networks
+  - Security headers (HSTS, CSP, X-Frame-Options, etc.)
+  - Health monitoring endpoint (`/healthz`) for Azure App Service
 - Docker container build and Azure Container Registry operations
 - Azure Web App with VNet integration
 - End-to-end testing and validation

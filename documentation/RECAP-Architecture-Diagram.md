@@ -37,7 +37,7 @@ graph LR
     subgraph "BC Gov Azure Landing Zone"
         subgraph "d837ad-test-vwan-spoke VNet"
             subgraph "webapp-integration-subnet (10.46.75.128/26)"
-                WebApp["🌐 Azure Web App<br/>d837ad-test-recap-webapp<br/><br/>📦 Nginx Proxy Container<br/>• Authentication<br/>• Header mapping<br/>• Token tracking"]
+                WebApp["🌐 Azure Web App<br/>d837ad-test-recap-webapp<br/><br/>📦 Nginx Proxy Container<br/>• Authentication<br/>• Header mapping<br/>• Token tracking<br/>• IP Whitelisting<br/>• Security Headers<br/>• Health Monitoring"]
             end
             
             subgraph "private-endpoint-subnet (10.46.75.64/26)"
@@ -177,6 +177,8 @@ graph LR
 
 #### Nginx Configuration
 - **Proxy Features**: Authentication, header mapping, token tracking
+- **Security**: IP whitelisting (142.22.0.0/15, 142.24.0.0/13, 142.32.0.0/14, 142.36.0.0/16), BCgov security headers, error page hiding
+- **Health Monitoring**: `/healthz` endpoint for Azure App Service health checks
 - **Connection Management**: Upstream configuration with connection pooling for reliable private endpoint connectivity
 - **SSL Handling**: Optimized for Azure OpenAI private endpoint requirements
 
