@@ -51,7 +51,7 @@ function Test-ModelLoad {
                 -TimeoutSec 30
             
             if ($response.choices -and $response.choices[0].message.content) {
-                Write-Host "✅ SUCCESS: $($response.choices[0].message.content.Trim())" -ForegroundColor Green
+                Write-Host "[SUCCESS] SUCCESS: $($response.choices[0].message.content.Trim())" -ForegroundColor Green
                 
                 # Check for usage data
                 if ($response.usage) {
@@ -60,12 +60,12 @@ function Test-ModelLoad {
                 
                 $modelSuccessCount++
             } else {
-                Write-Host "❌ FAILED: No content in response" -ForegroundColor Red
+                Write-Host "[ERROR] FAILED: No content in response" -ForegroundColor Red
                 $modelFailCount++
             }
         }
         catch {
-            Write-Host "❌ FAILED: $($_.Exception.Message)" -ForegroundColor Red
+            Write-Host "[ERROR] FAILED: $($_.Exception.Message)" -ForegroundColor Red
             $modelFailCount++
         }
         
@@ -109,8 +109,8 @@ Write-Host "=== Overall Test Results ===" -ForegroundColor Yellow
 foreach ($result in $modelResults) {
     $modelSuccessRate = ($result.Success / $Tests) * 100
     Write-Host "$($result.Model):" -ForegroundColor Cyan
-    Write-Host "  ✅ Successful: $($result.Success)/$Tests" -ForegroundColor Green
-    Write-Host "  ❌ Failed: $($result.Failed)/$Tests" -ForegroundColor Red
+    Write-Host "  [SUCCESS] Successful: $($result.Success)/$Tests" -ForegroundColor Green
+    Write-Host "  [ERROR] Failed: $($result.Failed)/$Tests" -ForegroundColor Red
     Write-Host "  Success Rate: $modelSuccessRate%" -ForegroundColor $(if ($modelSuccessRate -ge 80) { "Green" } else { "Red" })
 }
 
@@ -118,8 +118,8 @@ $totalTests = $totalSuccessCount + $totalFailCount
 $overallSuccessRate = if ($totalTests -gt 0) { ($totalSuccessCount / $totalTests) * 100 } else { 0 }
 
 Write-Host "`nOverall Summary:" -ForegroundColor Yellow
-Write-Host "✅ Total Successful: $totalSuccessCount/$totalTests" -ForegroundColor Green
-Write-Host "❌ Total Failed: $totalFailCount/$totalTests" -ForegroundColor Red
+Write-Host "[SUCCESS] Total Successful: $totalSuccessCount/$totalTests" -ForegroundColor Green
+Write-Host "[ERROR] Total Failed: $totalFailCount/$totalTests" -ForegroundColor Red
 Write-Host "Overall Success Rate: $overallSuccessRate%" -ForegroundColor $(if ($overallSuccessRate -ge 80) { "Green" } else { "Red" })
 
 if ($overallSuccessRate -lt 100) {

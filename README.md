@@ -45,16 +45,36 @@ RECAP/
 **Handles Azure OpenAI service deployment only:**
 - Creates Cognitive Services account with BC Gov policy compliance
 - Configures public access disabled and network ACLs
-- Supports model deployments (GPT-4o, gpt-4o-mini)
+- Supports four model deployments: GPT-4o, GPT-4o-mini, GPT-5-mini, text-embedding-3-large
+- Enhanced rate limits with capacity 150-250 based on model requirements
 
 **Model Cost Comparison (2025 Pricing):**
-- **GPT-4o**: $2.50 input / $10.00 output per million tokens (Standard SKU)
-- **GPT-4o-mini**: $0.15 input / $0.60 output per million tokens (GlobalStandard SKU)
+- **GPT-4o**: $2.50 input / $10.00 output per million tokens (Standard SKU, capacity 150)
+- **GPT-4o-mini**: $0.15 input / $0.60 output per million tokens (GlobalStandard SKU, capacity 250)
+- **GPT-5-mini**: Next-generation model with enhanced capabilities (GlobalStandard SKU, capacity 250)
+- **text-embedding-3-large**: High-quality embeddings (Standard SKU, capacity 150)
 - **Cost savings**: gpt-4o-mini is ~94% cheaper than gpt-4o (16x cheaper per token)
+
+**Rate Limit Configuration:**
+Azure OpenAI rate limits are determined by the `--sku-capacity` parameter:
+- **Tokens per minute** = sku-capacity × 1,000
+- **Requests per minute** = sku-capacity × 10
+
+**Current RECAP Rate Limits:**
+- **GPT-4o** (capacity 150): 150,000 tokens/min, 1,500 requests/min
+- **GPT-4o-mini** (capacity 250): 250,000 tokens/min, 2,500 requests/min  
+- **GPT-5-mini** (capacity 250): 250,000 tokens/min, 2,500 requests/min
+- **text-embedding-3-large** (capacity 150): 150,000 tokens/min, 1,500 requests/min
+
+**Model Strategy:**
+- GPT-4o and GPT-4o-mini remain primary models for production workloads
+- GPT-5-mini provides next-generation capabilities alongside existing models
+- text-embedding-3-large provides enhanced embedding capabilities with higher rate limits
 
 **SKU Requirements:**
 - GPT-4o uses Standard SKU (regional data residency)
-- GPT-4o-mini requires GlobalStandard SKU in Canada East for better load balancing and availability
+- GPT-4o-mini and GPT-5-mini require GlobalStandard SKU in Canada East for better load balancing
+- text-embedding-3-large uses Standard SKU for consistent performance
 
 ### `recap-web-proxy/` - Application Layer
 **Manages the proxy application and web app deployment:**
@@ -84,7 +104,7 @@ RECAP/
 .\recap-web-proxy\webapp-deploy.ps1 -Environment "prod"
 
 # Step 4: Test deployment
-.\recap-web-proxy\proxy-llm-basic-test.ps1 -Environment "prod" -Model "both"
+.\recap-web-proxy\proxy-llm-basic-test.ps1 -Environment "prod" -Model "all"
 ```
 
 **Prerequisites:**

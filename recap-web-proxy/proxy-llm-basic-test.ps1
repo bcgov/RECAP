@@ -2,8 +2,8 @@ param(
     [string]$ApiKey,
     [ValidateSet("test", "prod")]
     [string]$Environment = "prod",
-    [ValidateSet("gpt-4o", "gpt-4o-mini", "both")]
-    [string]$Model = "both",
+    [ValidateSet("gpt-4o", "gpt-4o-mini", "gpt-5-mini", "all")]
+    [string]$Model = "all",
     [string]$Question = "Hello"
 )
 
@@ -25,24 +25,47 @@ function Test-Model {
     
     # Create request body with model-specific parameters
     $chatBody = @{
-        messages = @(@{
-            role = "user"
-            content = $Question
-        })
-        max_tokens = 50
-    } | ConvertTo-Json
+        messages = @()
+    }
+    
+    # Add system message for GPT-5 to encourage visible output
+    if ($ModelName -like "gpt-5*") {
+        $chatBody.messages += @{
+            role = "system"
+            content = "You are a helpful assistant. Always provide a clear, direct response to the user's question."
+        }
+    }
+    
+    $chatBody.messages += @{
+        role = "user"
+        content = $Question
+    }
+    
+    # GPT-5 models use max_completion_tokens instead of max_tokens
+    # GPT-5 also uses reasoning tokens, so needs much higher limits for visible output
+    if ($ModelName -like "gpt-5*") {
+        $chatBody.max_completion_tokens = 500
+    } else {
+        $chatBody.max_tokens = 50
+    }
+    
+    $chatBody = $chatBody | ConvertTo-Json
 
     try {
         $webAppUrl = "https://d837ad-$Environment-recap-webapp.azurewebsites.net"
-        # Standard API version for all models
-        $apiVersion = "2024-02-15-preview"
+        # Use different API versions for different model families
+        if ($ModelName -like "gpt-5*") {
+            $apiVersion = "2024-10-01-preview"  # Newer API version for GPT-5
+        } else {
+            $apiVersion = "2024-02-15-preview"  # Standard API version for GPT-4
+        }
         $apiUrl = "$webAppUrl/openai/deployments/$ModelName/chat/completions?api-version=$apiVersion"
         
         Write-Host "Making request to: $apiUrl" -ForegroundColor Yellow
         
         $response = Invoke-WebRequest -Uri $apiUrl -Method POST -Headers $Headers -Body $chatBody -UseBasicParsing
         
-        Write-Host "✅ SUCCESS!" -ForegroundColor Green
+        Write-Host "[SUCCESS] SUCCESS!" -ForegroundColor Green
         $json = $response.Content | ConvertFrom-Json
         
         $responseContent = $json.choices[0].message.content
@@ -61,7 +84,7 @@ function Test-Model {
         return $true
         
     } catch {
-        Write-Host "❌ FAILED: $($_)" -ForegroundColor Red
+        Write-Host "[ERROR] FAILED: $($_)" -ForegroundColor Red
         return $false
     }
 }
@@ -71,7 +94,10 @@ Write-Host "Testing AI models in $Environment environment through RECAP proxy...
 $successCount = 0
 $totalTests = 0
 
-if ($Model -eq "both") {
+if ($Model -eq "all") {
+    $modelsToTest = @("gpt-4o", "gpt-4o-mini", "gpt-5-mini")
+} elseif ($Model -eq "both") {
+    # Backward compatibility - test original two models
     $modelsToTest = @("gpt-4o", "gpt-4o-mini")
 } else {
     $modelsToTest = @($Model)
@@ -92,7 +118,7 @@ Write-Host "Failed: $($totalTests - $successCount)" -ForegroundColor Red
 Write-Host "Success rate: $([math]::Round(($successCount / $totalTests) * 100, 1))%" -ForegroundColor Yellow
 
 if ($successCount -eq $totalTests) {
-    Write-Host "`n🎉 All models working correctly!" -ForegroundColor Green
+    Write-Host "`n[COMPLETE] All models working correctly!" -ForegroundColor Green
 } else {
-    Write-Host "`n⚠️ Some models failed - check deployment status" -ForegroundColor Yellow
+    Write-Host "`n[WARNING] Some models failed - check deployment status" -ForegroundColor Yellow
 }

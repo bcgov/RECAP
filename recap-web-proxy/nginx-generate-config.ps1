@@ -46,11 +46,11 @@ if (-not $privateEndpointIP -or $privateEndpointIP.Trim() -eq "") {
     exit 1
 }
 
-Write-Host "✅ Private endpoint IP: $privateEndpointIP" -ForegroundColor Green
+Write-Host "[SUCCESS] Private endpoint IP: $privateEndpointIP" -ForegroundColor Green
 
 # Set OpenAI service hostname
 $openAIServiceHost = "d837ad-$Environment-econ-llm-east.openai.azure.com"
-Write-Host "✅ OpenAI service host: $openAIServiceHost" -ForegroundColor Green
+Write-Host "[SUCCESS] OpenAI service host: $openAIServiceHost" -ForegroundColor Green
 
 # Read template and substitute values
 Write-Host "Processing template..." -ForegroundColor Yellow
@@ -69,11 +69,11 @@ try {
     
     # Write processed nginx.conf
     $processedContent | Set-Content $nginxConfPath -NoNewline
-    Write-Host "✅ Generated nginx.conf for $Environment environment" -ForegroundColor Green
+    Write-Host "[SUCCESS] Generated nginx.conf for $Environment environment" -ForegroundColor Green
     
     # Always create timestamped backup copy of the generated config
     Copy-Item $nginxConfPath $backupFileName -Force
-    Write-Host "✅ Created timestamped backup: $backupFileName" -ForegroundColor Green
+    Write-Host "[SUCCESS] Created timestamped backup: $backupFileName" -ForegroundColor Green
     
 } catch {
     Write-Host "ERROR: Failed to process template: $($_.Exception.Message)" -ForegroundColor Red
@@ -88,5 +88,5 @@ Write-Host "OpenAI Service Host: $openAIServiceHost" -ForegroundColor Yellow
 Write-Host "Output File: $nginxConfPath" -ForegroundColor Yellow
 Write-Host "Backup File: $backupFileName" -ForegroundColor Yellow
 
-Write-Host "`n✅ Configuration generated successfully!" -ForegroundColor Green
+Write-Host "`n[SUCCESS] Configuration generated successfully!" -ForegroundColor Green
 Write-Host "You can now build and deploy the Docker container with the environment-specific nginx.conf" -ForegroundColor White

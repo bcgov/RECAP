@@ -25,7 +25,7 @@ try {
     $expectedSubscriptionName = "d837ad-$Environment - RECAP LLM Responsible Evaluation And Consolidated"
     
     if ($currentSubscriptionName -notlike "*d837ad-$Environment*") {
-        Write-Output "❌ ERROR: Connected to wrong Azure subscription!" | Tee-Object -FilePath $logFile -Append
+        Write-Output "[ERROR] Connected to wrong Azure subscription!" | Tee-Object -FilePath $logFile -Append
         Write-Output "Current subscription: $currentSubscriptionName" | Tee-Object -FilePath $logFile -Append
         Write-Output "Expected subscription: $expectedSubscriptionName" | Tee-Object -FilePath $logFile -Append
         Write-Output "" | Tee-Object -FilePath $logFile -Append
@@ -33,23 +33,23 @@ try {
         
         az login
         if ($LASTEXITCODE -ne 0) {
-            Write-Output "❌ Azure login failed. Exiting script." | Tee-Object -FilePath $logFile -Append
+            Write-Output "[ERROR] Azure login failed. Exiting script." | Tee-Object -FilePath $logFile -Append
             exit 1
         }
         
         # Re-check subscription after login
         $currentSubscriptionName = az account show --query "name" --output tsv 2>$null
         if ($currentSubscriptionName -notlike "*d837ad-$Environment*") {
-            Write-Output "❌ Still not connected to correct subscription after login." | Tee-Object -FilePath $logFile -Append
+            Write-Output "[ERROR] Still not connected to correct subscription after login." | Tee-Object -FilePath $logFile -Append
             Write-Output "Please run: az account set --subscription `"d837ad-$Environment`"" | Tee-Object -FilePath $logFile -Append
             exit 1
         }
-        Write-Output "✅ Now connected to correct subscription: $currentSubscriptionName" | Tee-Object -FilePath $logFile -Append
+        Write-Output "[SUCCESS] Now connected to correct subscription: $currentSubscriptionName" | Tee-Object -FilePath $logFile -Append
     }
     
-    Write-Output "✅ Subscription: $currentSubscriptionName" | Tee-Object -FilePath $logFile -Append
+    Write-Output "[SUCCESS] Subscription: $currentSubscriptionName" | Tee-Object -FilePath $logFile -Append
 } catch {
-    Write-Output "❌ Not logged in to Azure. Please run: az login" | Tee-Object -FilePath $logFile -Append
+    Write-Output "[ERROR] Not logged in to Azure. Please run: az login" | Tee-Object -FilePath $logFile -Append
     exit 1
 }
 
@@ -73,15 +73,15 @@ function Invoke-StepWithLogging {
         if ($LASTEXITCODE -eq 0 -or $LASTEXITCODE -eq $null) {
             $stepEnd = Get-Date
             $duration = ($stepEnd - $stepStart).TotalSeconds
-            Write-Output "✅ Step $StepNumber completed successfully ($([math]::Round($duration, 1))s)" | Tee-Object -FilePath $LogFile -Append
+            Write-Output "[SUCCESS] Step $StepNumber completed successfully ($([math]::Round($duration, 1))s)" | Tee-Object -FilePath $LogFile -Append
             return $true
         } else {
-            Write-Output "❌ Step $StepNumber failed with exit code: $LASTEXITCODE" | Tee-Object -FilePath $LogFile -Append
+            Write-Output "[ERROR] Step $StepNumber failed with exit code: $LASTEXITCODE" | Tee-Object -FilePath $LogFile -Append
             return $false
         }
     }
     catch {
-        Write-Output "❌ Step $StepNumber failed with error: $($_.Exception.Message)" | Tee-Object -FilePath $LogFile -Append
+        Write-Output "[ERROR] Step $StepNumber failed with error: $($_.Exception.Message)" | Tee-Object -FilePath $LogFile -Append
         return $false
     }
 }
@@ -95,22 +95,22 @@ Write-Output "" | Tee-Object -FilePath $logFile
 Write-Output "Verifying Azure subscription..." | Tee-Object -FilePath $logFile
 $subscription = az account show --query "name" --output tsv 2>&1 | Tee-Object -FilePath $logFile -Append
 if ($LASTEXITCODE -ne 0) {
-    Write-Output "❌ Not logged into Azure. Please run 'az login' first." | Tee-Object -FilePath $logFile -Append
+    Write-Output "[ERROR] Not logged into Azure. Please run 'az login' first." | Tee-Object -FilePath $logFile -Append
     exit 1
 }
-Write-Output "✅ Subscription: $subscription" | Tee-Object -FilePath $logFile -Append
+Write-Output "[SUCCESS] Subscription: $subscription" | Tee-Object -FilePath $logFile -Append
 
 # Verify Docker Desktop is running
 Write-Output "Verifying Docker Desktop is running..." | Tee-Object -FilePath $logFile -Append
 $dockerRunning = docker info 2>$null
 if ($LASTEXITCODE -ne 0) {
-    Write-Output "❌ Docker Desktop is not running. Please start Docker Desktop and try again." | Tee-Object -FilePath $logFile -Append
+    Write-Output "[ERROR] Docker Desktop is not running. Please start Docker Desktop and try again." | Tee-Object -FilePath $logFile -Append
     Write-Output "   - Start Docker Desktop application" | Tee-Object -FilePath $logFile -Append
     Write-Output "   - Wait for Docker to fully initialize" | Tee-Object -FilePath $logFile -Append
     Write-Output "   - Run this script again" | Tee-Object -FilePath $logFile -Append
     exit 1
 }
-Write-Output "✅ Docker Desktop is running" | Tee-Object -FilePath $logFile -Append
+Write-Output "[SUCCESS] Docker Desktop is running" | Tee-Object -FilePath $logFile -Append
 Write-Output "" | Tee-Object -FilePath $logFile -Append
 
 $steps = @()
@@ -179,26 +179,26 @@ if ($success) {
         
         if ($LASTEXITCODE -eq 0 -and $apiKey) {
             Write-Output "Running end-to-end tests..." | Tee-Object -FilePath $logFile -Append
-            $testOutput = .\recap-web-proxy\proxy-llm-basic-test.ps1 -ApiKey $apiKey -Environment $Environment -Model "both" 2>&1 | Tee-Object -FilePath $logFile -Append
+            $testOutput = .\recap-web-proxy\proxy-llm-basic-test.ps1 -ApiKey $apiKey -Environment $Environment -Model "all" 2>&1 | Tee-Object -FilePath $logFile -Append
             
             if ($LASTEXITCODE -eq 0) {
-                Write-Output "✅ Step 7 completed successfully" | Tee-Object -FilePath $logFile -Append
+                Write-Output "[SUCCESS] Step 7 completed successfully" | Tee-Object -FilePath $logFile -Append
                 $steps += @{Number=7; Name="Test end-to-end deployment"; Success=$true}
             } else {
-                Write-Output "❌ Step 7 failed: Tests did not pass" | Tee-Object -FilePath $logFile -Append
+                Write-Output "[ERROR] Step 7 failed: Tests did not pass" | Tee-Object -FilePath $logFile -Append
                 $steps += @{Number=7; Name="Test end-to-end deployment"; Success=$false}
                 $failedSteps += 7
                 $success = $false
             }
         } else {
-            Write-Output "❌ Step 7 failed: Could not retrieve API key" | Tee-Object -FilePath $logFile -Append
+            Write-Output "[ERROR] Step 7 failed: Could not retrieve API key" | Tee-Object -FilePath $logFile -Append
             $steps += @{Number=7; Name="Test end-to-end deployment"; Success=$false}
             $failedSteps += 7
             $success = $false
         }
     }
     catch {
-        Write-Output "❌ Step 7 failed with error: $($_.Exception.Message)" | Tee-Object -FilePath $logFile -Append
+        Write-Output "[ERROR] Step 7 failed with error: $($_.Exception.Message)" | Tee-Object -FilePath $logFile -Append
         $steps += @{Number=7; Name="Test end-to-end deployment"; Success=$false}
         $failedSteps += 7
         $success = $false
@@ -217,21 +217,21 @@ Write-Output "Log File: $logFile" | Tee-Object -FilePath $logFile -Append
 Write-Output "" | Tee-Object -FilePath $logFile -Append
 
 foreach ($step in $steps) {
-    $status = if ($step.Success) { "✅" } else { "❌" }
+    $status = if ($step.Success) { "[SUCCESS]" } else { "[ERROR]" }
     $color = if ($step.Success) { "Green" } else { "Red" }
     Write-Output "$status Step $($step.Number): $($step.Name)" | Tee-Object -FilePath $logFile -Append
 }
 
 if ($success) {
     Write-Output "" | Tee-Object -FilePath $logFile -Append
-    Write-Output "🎯 Expected Final Result:" | Tee-Object -FilePath $logFile -Append
-    Write-Output "- 🎉 All models working correctly!" | Tee-Object -FilePath $logFile -Append
-    Write-Output "- ✅ Success rate: 100%" | Tee-Object -FilePath $logFile -Append
+    Write-Output "[INFO] Expected Final Result:" | Tee-Object -FilePath $logFile -Append
+    Write-Output "- [COMPLETE] All models working correctly!" | Tee-Object -FilePath $logFile -Append
+    Write-Output "- [SUCCESS] Success rate: 100%" | Tee-Object -FilePath $logFile -Append
     Write-Output "" | Tee-Object -FilePath $logFile -Append    
     exit 0
 } else {
     Write-Output "" | Tee-Object -FilePath $logFile -Append
-    Write-Output "❌ DEPLOYMENT FAILED" | Tee-Object -FilePath $logFile -Append
+    Write-Output "[ERROR] DEPLOYMENT FAILED" | Tee-Object -FilePath $logFile -Append
     Write-Output "Failed steps: $($failedSteps -join ', ')" | Tee-Object -FilePath $logFile -Append
     Write-Output "Check the log file for detailed error information: $logFile" | Tee-Object -FilePath $logFile -Append
     exit 1

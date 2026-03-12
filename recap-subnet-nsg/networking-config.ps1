@@ -50,10 +50,10 @@ Write-Host "  Web App Integration Subnet: $webAppSubnetPrefix (/28 - 11 usable I
 Write-Host "`nChecking Azure CLI authentication..." -ForegroundColor Cyan
 try {
     $azAccount = az account show --output json | ConvertFrom-Json
-    Write-Host "✅ Authenticated as: $($azAccount.user.name)" -ForegroundColor Green
-    Write-Host "✅ Subscription: $($azAccount.name)" -ForegroundColor Green
+    Write-Host "[SUCCESS] Authenticated as: $($azAccount.user.name)" -ForegroundColor Green
+    Write-Host "[SUCCESS] Subscription: $($azAccount.name)" -ForegroundColor Green
 } catch {
-    Write-Host "❌ Not logged in to Azure. Please log in..." -ForegroundColor Red
+    Write-Host "[ERROR] Not logged in to Azure. Please log in..." -ForegroundColor Red
     az login
     if (-not $?) {
         Write-Host "Azure login failed. Exiting script." -ForegroundColor Red
@@ -72,10 +72,10 @@ $nsgResult = az network nsg create `
     --location $Location 2>&1
 
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "❌ Failed to create private endpoint NSG: $nsgResult" -ForegroundColor Red
+    Write-Host "[ERROR] Failed to create private endpoint NSG: $nsgResult" -ForegroundColor Red
     exit 1
 }
-Write-Host "✅ Private endpoint NSG created successfully" -ForegroundColor Green
+Write-Host "[SUCCESS] Private endpoint NSG created successfully" -ForegroundColor Green
 
 # Add rule to allow SPANBC traffic (142.22.0.0/16)
 az network nsg rule create `
@@ -98,10 +98,10 @@ $webAppNsgResult = az network nsg create `
     --location $Location 2>&1
 
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "❌ Failed to create web app NSG: $webAppNsgResult" -ForegroundColor Red
+    Write-Host "[ERROR] Failed to create web app NSG: $webAppNsgResult" -ForegroundColor Red
     exit 1
 }
-Write-Host "✅ Web app NSG created successfully" -ForegroundColor Green
+Write-Host "[SUCCESS] Web app NSG created successfully" -ForegroundColor Green
 
 # Add rule for web app outbound to private endpoint
 az network nsg rule create `
@@ -117,7 +117,7 @@ az network nsg rule create `
     --direction Outbound `
     --description "Allow web app to access private endpoint"
 
-Write-Host "✅ Network Security Groups created successfully" -ForegroundColor Green
+Write-Host "[SUCCESS] Network Security Groups created successfully" -ForegroundColor Green
 
 # Step 2: Create Subnets
 Write-Host "`nStep 2: Creating Subnets..." -ForegroundColor Cyan
@@ -133,7 +133,7 @@ az network vnet subnet create `
     --disable-private-endpoint-network-policies true
 
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "❌ Failed to create private endpoint subnet" -ForegroundColor Red
+    Write-Host "[ERROR] Failed to create private endpoint subnet" -ForegroundColor Red
     exit 1
 }
 
@@ -148,11 +148,11 @@ az network vnet subnet create `
     --delegations Microsoft.Web/serverFarms
 
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "❌ Failed to create web app integration subnet" -ForegroundColor Red
+    Write-Host "[ERROR] Failed to create web app integration subnet" -ForegroundColor Red
     exit 1
 }
 
-Write-Host "✅ Subnets created successfully" -ForegroundColor Green
+Write-Host "[SUCCESS] Subnets created successfully" -ForegroundColor Green
 
 # Step 3: Verify Configuration
 Write-Host "`nStep 3: Verifying Network Configuration..." -ForegroundColor Cyan
@@ -166,10 +166,10 @@ az network vnet subnet list `
     --output table
 
 Write-Host "`n=== Networking Infrastructure Complete ===" -ForegroundColor Green
-Write-Host "✅ Private Endpoint Subnet: $privateEndpointSubnetName ($privateEndpointSubnetPrefix)" -ForegroundColor White
-Write-Host "✅ Web App Integration Subnet: $webAppSubnetName ($webAppSubnetPrefix)" -ForegroundColor White
-Write-Host "✅ Network Security Groups: $privateEndpointNsgName, $webAppNsgName" -ForegroundColor White
-Write-Host "✅ SPANBC Access: 142.22.0.0/16 allowed on port 443" -ForegroundColor White
+Write-Host "[SUCCESS] Private Endpoint Subnet: $privateEndpointSubnetName ($privateEndpointSubnetPrefix)" -ForegroundColor White
+Write-Host "[SUCCESS] Web App Integration Subnet: $webAppSubnetName ($webAppSubnetPrefix)" -ForegroundColor White
+Write-Host "[SUCCESS] Network Security Groups: $privateEndpointNsgName, $webAppNsgName" -ForegroundColor White
+Write-Host "[SUCCESS] SPANBC Access: 142.22.0.0/16 allowed on port 443" -ForegroundColor White
 
 Write-Host "`nNext Steps:" -ForegroundColor Cyan
 Write-Host "1. Run openai-deploy.ps1 to create OpenAI service with private endpoint" -ForegroundColor White
