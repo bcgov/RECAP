@@ -36,11 +36,6 @@ jobs:
       with:
         fetch-depth: '1'
         
-    - name: Setup Azure CLI
-      uses: azure/CLI@v1
-      with:
-        azcliversion: latest
-        
     - name: Login to Azure using OIDC
       uses: azure/login@v2
       with:
