@@ -39,7 +39,6 @@ jobs:
     - name: Build Docker image
       run: |
         cd ${{ env.WORKING_DIRECTORY }}
-        echo "Building RECAP web proxy for development..."
         docker build --no-cache --pull -t recap-web-proxy:dev .
         docker tag recap-web-proxy:dev recap-web-proxy:${{ steps.get_commit.outputs.SHA_SHORT }}
         
