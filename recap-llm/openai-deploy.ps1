@@ -118,7 +118,7 @@ if (-not $gpt4oExists) {
         --model-name "gpt-4o" `
         --model-version "2024-11-20" `
         --model-format OpenAI `
-        --sku-capacity 10 `
+        --sku-capacity 150 `
         --sku-name "Standard"
 
     if (-not $?) {
@@ -129,14 +129,13 @@ if (-not $gpt4oExists) {
     }
 }
 
-Write-Host "Step 3: Creating gpt-4o-mini deployment..." -ForegroundColor Cyan
-Write-Host "Note: gpt-4o-mini is 94% cheaper than gpt-4o (\$0.15/\$0.60 vs \$2.50/\$10.00 per M tokens)" -ForegroundColor Yellow
+Write-Host "Step 3: Creating GPT-4o-mini deployment..." -ForegroundColor Cyan
 
-# Check if gpt-4o-mini deployment already exists
+# Check if GPT-4o-mini deployment already exists
 try {
     $gpt4oMiniCheck = az cognitiveservices account deployment show --name $openAIName --resource-group $ResourceGroup --deployment-name "gpt-4o-mini" --query "name" --output tsv
     if ($gpt4oMiniCheck -eq "gpt-4o-mini") {
-        Write-Host "[SUCCESS] gpt-4o-mini deployment already exists, skipping..." -ForegroundColor Yellow
+        Write-Host "[SUCCESS] GPT-4o-mini deployment already exists, skipping..." -ForegroundColor Yellow
         $gpt4oMiniExists = $true
     } else {
         $gpt4oMiniExists = $false
@@ -153,14 +152,84 @@ if (-not $gpt4oMiniExists) {
         --model-name "gpt-4o-mini" `
         --model-version "2024-07-18" `
         --model-format OpenAI `
-        --sku-capacity 10 `
+        --sku-capacity 250 `
         --sku-name "GlobalStandard"
 
     if (-not $?) {
-        Write-Host "Failed to create gpt-4o-mini deployment." -ForegroundColor Red
+        Write-Host "Failed to create GPT-4o-mini deployment." -ForegroundColor Red
         exit 1
     } else {
-        Write-Host "gpt-4o-mini deployment created successfully." -ForegroundColor Green
+        Write-Host "GPT-4o-mini deployment created successfully." -ForegroundColor Green
+    }
+}
+
+Write-Host "Step 4: Creating GPT-5-mini deployment..." -ForegroundColor Cyan
+Write-Host "Note: GPT-5-mini is next-generation model with enhanced capabilities" -ForegroundColor Yellow
+
+# Check if GPT-5-mini deployment already exists
+try {
+    $gpt5MiniCheck = az cognitiveservices account deployment show --name $openAIName --resource-group $ResourceGroup --deployment-name "gpt-5-mini" --query "name" --output tsv
+    if ($gpt5MiniCheck -eq "gpt-5-mini") {
+        Write-Host "[SUCCESS] GPT-5-mini deployment already exists, skipping..." -ForegroundColor Yellow
+        $gpt5MiniExists = $true
+    } else {
+        $gpt5MiniExists = $false
+    }
+} catch {
+    $gpt5MiniExists = $false
+}
+
+if (-not $gpt5MiniExists) {
+    $result = az cognitiveservices account deployment create `
+        --name $openAIName `
+        --resource-group $ResourceGroup `
+        --deployment-name "gpt-5-mini" `
+        --model-name "gpt-5-mini" `
+        --model-version "2025-08-07" `
+        --model-format OpenAI `
+        --sku-capacity 250 `
+        --sku-name "GlobalStandard"
+
+    if (-not $?) {
+        Write-Host "Failed to create GPT-5-mini deployment." -ForegroundColor Red
+        exit 1
+    } else {
+        Write-Host "GPT-5-mini deployment created successfully." -ForegroundColor Green
+    }
+}
+
+Write-Host "Step 5: Creating text-embedding-3-large deployment..." -ForegroundColor Cyan
+Write-Host "Note: text-embedding-3-large provides high-quality embeddings with enhanced rate limits" -ForegroundColor Yellow
+
+# Check if text-embedding-3-large deployment already exists
+try {
+    $embeddingCheck = az cognitiveservices account deployment show --name $openAIName --resource-group $ResourceGroup --deployment-name "text-embedding-3-large" --query "name" --output tsv
+    if ($embeddingCheck -eq "text-embedding-3-large") {
+        Write-Host "[SUCCESS] text-embedding-3-large deployment already exists, skipping..." -ForegroundColor Yellow
+        $embeddingExists = $true
+    } else {
+        $embeddingExists = $false
+    }
+} catch {
+    $embeddingExists = $false
+}
+
+if (-not $embeddingExists) {
+    $result = az cognitiveservices account deployment create `
+        --name $openAIName `
+        --resource-group $ResourceGroup `
+        --deployment-name "text-embedding-3-large" `
+        --model-name "text-embedding-3-large" `
+        --model-version "1" `
+        --model-format OpenAI `
+        --sku-capacity 150 `
+        --sku-name "Standard"
+
+    if (-not $?) {
+        Write-Host "Failed to create text-embedding-3-large deployment." -ForegroundColor Red
+        exit 1
+    } else {
+        Write-Host "text-embedding-3-large deployment created successfully." -ForegroundColor Green
     }
 }
 
@@ -168,12 +237,16 @@ Write-Host "=== Deployment Complete ===" -ForegroundColor Green
 Write-Host "Azure OpenAI Service: $openAIName" -ForegroundColor Yellow
 Write-Host "Endpoint: https://$openAIName.openai.azure.com/" -ForegroundColor Yellow
 Write-Host "`nModel Deployments:" -ForegroundColor Green
-Write-Host "  - gpt-4o (2024-11-20): Standard SKU, capacity 10 - \$2.50/\$10.00 per M tokens" -ForegroundColor White
-Write-Host "  - gpt-4o-mini (2024-07-18): GlobalStandard SKU, capacity 10 - \$0.15/\$0.60 per M tokens (94% cheaper)" -ForegroundColor White
+Write-Host "  - gpt-4o (2024-11-20): Standard SKU, capacity 150 - \$2.50/\$10.00 per M tokens" -ForegroundColor White
+Write-Host "  - gpt-4o-mini (2024-07-18): GlobalStandard SKU, capacity 250 - \$0.15/\$0.60 per M tokens (94% cheaper)" -ForegroundColor White
+Write-Host "  - gpt-5-mini (2025-08-07): GlobalStandard SKU, capacity 250 - Next-generation model" -ForegroundColor White
+Write-Host "  - text-embedding-3-large (1): Standard SKU, capacity 150 - High-quality embeddings" -ForegroundColor White
 
 Write-Host "`nModel Endpoints:" -ForegroundColor Cyan
 Write-Host "  GPT-4o: https://$openAIName.openai.azure.com/openai/deployments/gpt-4o/chat/completions" -ForegroundColor White
 Write-Host "  GPT-4o-mini: https://$openAIName.openai.azure.com/openai/deployments/gpt-4o-mini/chat/completions" -ForegroundColor White
+Write-Host "  GPT-5-mini: https://$openAIName.openai.azure.com/openai/deployments/gpt-5-mini/chat/completions" -ForegroundColor White
+Write-Host "  Embeddings: https://$openAIName.openai.azure.com/openai/deployments/text-embedding-3-large/embeddings" -ForegroundColor White
 
 Write-Host "`nGet API Key:" -ForegroundColor Cyan
 Write-Host "az cognitiveservices account keys list --name $openAIName --resource-group $ResourceGroup --query key1 --output tsv" -ForegroundColor White

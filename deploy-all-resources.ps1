@@ -179,7 +179,7 @@ if ($success) {
         
         if ($LASTEXITCODE -eq 0 -and $apiKey) {
             Write-Output "Running end-to-end tests..." | Tee-Object -FilePath $logFile -Append
-            $testOutput = .\recap-web-proxy\proxy-llm-basic-test.ps1 -ApiKey $apiKey -Environment $Environment -Model "both" 2>&1 | Tee-Object -FilePath $logFile -Append
+            $testOutput = .\recap-web-proxy\proxy-llm-basic-test.ps1 -ApiKey $apiKey -Environment $Environment -Model "all" 2>&1 | Tee-Object -FilePath $logFile -Append
             
             if ($LASTEXITCODE -eq 0) {
                 Write-Output "[SUCCESS] Step 7 completed successfully" | Tee-Object -FilePath $logFile -Append

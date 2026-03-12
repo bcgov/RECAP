@@ -58,7 +58,14 @@ docker tag prod-recap-web-proxy:latest d837adprodcontainers.azurecr.io/prod-reca
 docker tag prod-recap-web-proxy:latest d837adprodcontainers.azurecr.io/prod-recap-web-proxy:stable
 ```
 
-### 4. Push Image to Azure Container Registry
+### 4. Login to Azure Container Registry
+```bash
+az acr login --name d837adprodcontainers
+```
+
+**Output**: Login Succeeded
+
+### 5. Push Image to Azure Container Registry
 ```bash
 # For releases (like today) - push latest tag
 docker push d837adprodcontainers.azurecr.io/prod-recap-web-proxy:latest
@@ -67,7 +74,7 @@ docker push d837adprodcontainers.azurecr.io/prod-recap-web-proxy:latest
 docker push d837adprodcontainers.azurecr.io/prod-recap-web-proxy:stable
 ```
 
-### 5. Update Webapp Container Image
+### 6. Update Webapp Container Image
 ```bash
 # For releases (like today) - use latest tag
 az webapp config container set --name "d837ad-prod-recap-webapp" --resource-group "d837ad-prod-networking" --container-image-name "d837adprodcontainers.azurecr.io/prod-recap-web-proxy:latest"
@@ -78,12 +85,12 @@ az webapp config container set --name "d837ad-prod-recap-webapp" --resource-grou
 
 **Note**: Use `--container-image-name` instead of deprecated `--docker-custom-image-name`
 
-### 6. Restart Webapp
+### 7. Restart Webapp
 ```bash
 az webapp restart --name "d837ad-prod-recap-webapp" --resource-group "d837ad-prod-networking"
 ```
 
-### 7. Verify Deployment
+### 8. Verify Deployment
 ```bash
 # Check health endpoint
 curl.exe -I https://d837ad-prod-recap-webapp.azurewebsites.net/healthz --max-time 10
