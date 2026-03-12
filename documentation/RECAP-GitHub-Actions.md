@@ -68,6 +68,8 @@ Configure these secrets in **Settings → Secrets and variables → Actions**:
 
 ## Azure OIDC Setup Instructions
 
+### Option A: Self-Service Setup (If You Have Permissions)
+
 ### 1. Create Entra ID Application
 
 ```bash
@@ -118,6 +120,58 @@ az ad app federated-credential create \
 ```
 
 **Replace** `YOUR_GITHUB_ORG` with your actual GitHub organization/username.
+
+### Option B: Administrator Request (If You Lack Permissions)
+
+If you don't have permissions to create Entra ID applications, send this request to your Azure administrator:
+
+---
+
+**Subject:** Azure Service Principal for RECAP GitHub Actions OIDC Authentication
+
+**Request Details:**
+Please create an Azure service principal for GitHub Actions automation with the following specifications:
+
+#### 1. Entra ID Application
+- **Name**: `recap-github-actions` 
+- **Purpose**: GitHub Actions CI/CD for RECAP project
+- **Authentication**: OIDC federated credentials (no client secrets needed)
+
+#### 2. Azure Permissions Required
+**Contributor role** on these subscriptions:
+- **Test**: `d837ad-test` (Subscription ID: `5445292b-8313-4272-96aa-f30efd1e1654`)
+- **Production**: `d837ad-prod` (Subscription ID: get from admin)
+
+#### 3. Federated Credentials Configuration
+Add these federated credentials to the application:
+
+**Test Environment:**
+- **Issuer**: `https://token.actions.githubusercontent.com`
+- **Subject**: `repo:YOUR_GITHUB_ORG/RECAP:environment:test`
+- **Name**: `recap-test-environment`
+
+**Production Environment:**  
+- **Issuer**: `https://token.actions.githubusercontent.com`
+- **Subject**: `repo:YOUR_GITHUB_ORG/RECAP:environment:prod`
+- **Name**: `recap-prod-environment`
+
+*(Replace `YOUR_GITHUB_ORG` with your actual GitHub organization/username)*
+
+#### 4. Information Needed Back
+Please provide:
+- **Application (Client) ID**: `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`
+- **Tenant ID**: `6fdb5200-3d0d-4a8a-b036-d3685e359adc` (confirm)
+- **Production Subscription ID**: `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`
+
+---
+
+### Manual Deployment Alternative
+
+If getting admin approval takes time, you can use manual deployment with these commands:
+- [`documentation/recap-docker-build-tag-push-update-restart-test.md`](./recap-docker-build-tag-push-update-restart-test.md)
+- [`documentation/recap-docker-build-tag-push-update-restart-prod.md`](./recap-docker-build-tag-push-update-restart-prod.md)
+
+GitHub Actions automation can be configured later once the service principal is created.
 
 ## GitHub Environments
 

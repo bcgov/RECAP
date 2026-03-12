@@ -52,9 +52,9 @@ jobs:
         # Test that nginx is responding
         docker exec test-container nginx -t
         if [ $? -eq 0 ]; then
-          echo "✅ Nginx configuration is valid"
+          echo "[SUCCESS] Nginx configuration is valid"
         else
-          echo "❌ Nginx configuration error"
+          echo "[ERROR] Nginx configuration error"
           docker logs test-container
           exit 1
         fi
@@ -69,10 +69,10 @@ jobs:
         
     - name: Development build summary
       run: |
-        echo "🔧 Development build completed successfully!"
-        echo "📦 Image: recap-web-proxy:dev"
-        echo "🏷️ Tag: recap-web-proxy:${{ steps.get_commit.outputs.SHA_SHORT }}"
-        echo "📝 Commit: ${{ steps.get_commit.outputs.SHA_SHORT }}"
+        echo "[SUCCESS] Development build completed successfully!"
+        echo "Image: recap-web-proxy:dev"
+        echo "Tag: recap-web-proxy:${{ steps.get_commit.outputs.SHA_SHORT }}"
+        echo "Commit: ${{ steps.get_commit.outputs.SHA_SHORT }}"
         echo ""
         echo "Note: This is a development build - no deployment to Azure."
         echo "To deploy manually, use the commands in documentation/"
