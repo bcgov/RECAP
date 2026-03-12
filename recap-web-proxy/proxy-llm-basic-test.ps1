@@ -42,7 +42,7 @@ function Test-Model {
         
         $response = Invoke-WebRequest -Uri $apiUrl -Method POST -Headers $Headers -Body $chatBody -UseBasicParsing
         
-        Write-Host "✅ SUCCESS!" -ForegroundColor Green
+        Write-Host "[SUCCESS] SUCCESS!" -ForegroundColor Green
         $json = $response.Content | ConvertFrom-Json
         
         $responseContent = $json.choices[0].message.content
@@ -61,7 +61,7 @@ function Test-Model {
         return $true
         
     } catch {
-        Write-Host "❌ FAILED: $($_)" -ForegroundColor Red
+        Write-Host "[ERROR] FAILED: $($_)" -ForegroundColor Red
         return $false
     }
 }
@@ -92,7 +92,7 @@ Write-Host "Failed: $($totalTests - $successCount)" -ForegroundColor Red
 Write-Host "Success rate: $([math]::Round(($successCount / $totalTests) * 100, 1))%" -ForegroundColor Yellow
 
 if ($successCount -eq $totalTests) {
-    Write-Host "`n🎉 All models working correctly!" -ForegroundColor Green
+    Write-Host "`n[COMPLETE] All models working correctly!" -ForegroundColor Green
 } else {
-    Write-Host "`n⚠️ Some models failed - check deployment status" -ForegroundColor Yellow
+    Write-Host "`n[WARNING] Some models failed - check deployment status" -ForegroundColor Yellow
 }

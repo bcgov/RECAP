@@ -28,8 +28,8 @@ Write-Host "OpenAI Service: $openAIName" -ForegroundColor Green
 Write-Host "Checking Azure CLI authentication..." -ForegroundColor Cyan
 try {
     $azAccount = az account show --output json | ConvertFrom-Json
-    Write-Host "✅ Authenticated as: $($azAccount.user.name)" -ForegroundColor Green
-    Write-Host "✅ Subscription: $($azAccount.name)" -ForegroundColor Green
+    Write-Host "[SUCCESS] Authenticated as: $($azAccount.user.name)" -ForegroundColor Green
+    Write-Host "[SUCCESS] Subscription: $($azAccount.name)" -ForegroundColor Green
 } catch {
     Write-Host "You are not logged in to Azure. Please log in..." -ForegroundColor Red
     az login
@@ -101,7 +101,7 @@ Write-Host "Step 2: Creating GPT-4o deployment..." -ForegroundColor Cyan
 try {
     $gpt4oCheck = az cognitiveservices account deployment show --name $openAIName --resource-group $ResourceGroup --deployment-name "gpt-4o" --query "name" --output tsv
     if ($gpt4oCheck -eq "gpt-4o") {
-        Write-Host "✅ GPT-4o deployment already exists, skipping..." -ForegroundColor Yellow
+        Write-Host "[SUCCESS] GPT-4o deployment already exists, skipping..." -ForegroundColor Yellow
         $gpt4oExists = $true
     } else {
         $gpt4oExists = $false
@@ -136,7 +136,7 @@ Write-Host "Note: gpt-4o-mini is 94% cheaper than gpt-4o (\$0.15/\$0.60 vs \$2.5
 try {
     $gpt4oMiniCheck = az cognitiveservices account deployment show --name $openAIName --resource-group $ResourceGroup --deployment-name "gpt-4o-mini" --query "name" --output tsv
     if ($gpt4oMiniCheck -eq "gpt-4o-mini") {
-        Write-Host "✅ gpt-4o-mini deployment already exists, skipping..." -ForegroundColor Yellow
+        Write-Host "[SUCCESS] gpt-4o-mini deployment already exists, skipping..." -ForegroundColor Yellow
         $gpt4oMiniExists = $true
     } else {
         $gpt4oMiniExists = $false

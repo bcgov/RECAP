@@ -110,12 +110,12 @@ if (-not $vnetIntegrationCheck -or $vnetIntegrationCheck -eq "") {
         --vnet $vnetName `
         --subnet $webAppSubnetName 2>$null
     if ($LASTEXITCODE -eq 0) {
-        Write-Host "✅ VNet integration added successfully" -ForegroundColor Green
+        Write-Host "[SUCCESS] VNet integration added successfully" -ForegroundColor Green
     } else {
-        Write-Host "⚠️ VNet integration failed - web app may not reach private endpoint" -ForegroundColor Yellow
+        Write-Host "[WARNING] VNet integration failed - web app may not reach private endpoint" -ForegroundColor Yellow
     }
 } else {
-    Write-Host "✅ VNet integration already configured" -ForegroundColor Green
+    Write-Host "[SUCCESS] VNet integration already configured" -ForegroundColor Green
 }
 
 Write-Host "" -ForegroundColor White

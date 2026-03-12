@@ -21,7 +21,7 @@ try {
     $expectedSubscriptionName = "d837ad-$Environment - RECAP LLM Responsible Evaluation And Consolidated"
     
     if ($currentSubscriptionName -notlike "*d837ad-$Environment*") {
-        Write-Host "❌ ERROR: Connected to wrong Azure subscription!" -ForegroundColor Red
+        Write-Host "[ERROR] Connected to wrong Azure subscription!" -ForegroundColor Red
         Write-Host "Current subscription: $currentSubscriptionName" -ForegroundColor Yellow
         Write-Host "Expected subscription: $expectedSubscriptionName" -ForegroundColor Yellow
         Write-Host "" -ForegroundColor White
@@ -29,23 +29,23 @@ try {
         
         az login
         if ($LASTEXITCODE -ne 0) {
-            Write-Host "❌ Azure login failed. Exiting script." -ForegroundColor Red
+            Write-Host "[ERROR] Azure login failed. Exiting script." -ForegroundColor Red
             exit 1
         }
         
         # Re-check subscription after login
         $currentSubscriptionName = az account show --query "name" --output tsv 2>$null
         if ($currentSubscriptionName -notlike "*d837ad-$Environment*") {
-            Write-Host "❌ Still not connected to correct subscription after login." -ForegroundColor Red
+            Write-Host "[ERROR] Still not connected to correct subscription after login." -ForegroundColor Red
             Write-Host "Please run: az account set --subscription `"d837ad-$Environment`"" -ForegroundColor Cyan
             exit 1
         }
-        Write-Host "✅ Now connected to correct subscription: $currentSubscriptionName" -ForegroundColor Green
+        Write-Host "[SUCCESS] Now connected to correct subscription: $currentSubscriptionName" -ForegroundColor Green
     } else {
-        Write-Host "✅ Connected to correct subscription: $currentSubscriptionName" -ForegroundColor Green
+        Write-Host "[SUCCESS] Connected to correct subscription: $currentSubscriptionName" -ForegroundColor Green
     }
 } catch {
-    Write-Host "❌ Not logged in to Azure. Please run: az login" -ForegroundColor Red
+    Write-Host "[ERROR] Not logged in to Azure. Please run: az login" -ForegroundColor Red
     exit 1
 }
 
@@ -64,7 +64,7 @@ $webAppSubnetName = "d837ad-$Environment-webapp-integration-subnet"
 $privateEndpointNsgName = "d837ad-$Environment-pe-nsg"
 $webAppNsgName = "d837ad-$Environment-webapp-nsg"
 
-Write-Host "⚠️  WARNING: This will DELETE the following resources:" -ForegroundColor Red
+Write-Host "[WARNING]  WARNING: This will DELETE the following resources:" -ForegroundColor Red
 Write-Host "" -ForegroundColor White
 Write-Host "Resource Group: $resourceGroup" -ForegroundColor Yellow
 Write-Host "  ├── Azure OpenAI Service: $openAIName" -ForegroundColor White
@@ -82,29 +82,29 @@ Write-Host "" -ForegroundColor White
 if (-not $Force) {
     $confirmation = Read-Host "Are you absolutely sure you want to DELETE ALL these resources? Type 'DELETE-ALL' to proceed"
     if ($confirmation -ne "DELETE-ALL") {
-        Write-Host "❌ Cleanup cancelled. No resources were deleted." -ForegroundColor Green
+        Write-Host "[ERROR] Cleanup cancelled. No resources were deleted." -ForegroundColor Green
         exit 0
     }
     
     Write-Host "" -ForegroundColor White
     $finalConfirmation = Read-Host "Last chance! This action CANNOT be undone. Type 'CONFIRMED' to proceed"
     if ($finalConfirmation -ne "CONFIRMED") {
-        Write-Host "❌ Cleanup cancelled. No resources were deleted." -ForegroundColor Green
+        Write-Host "[ERROR] Cleanup cancelled. No resources were deleted." -ForegroundColor Green
         exit 0
     }
 }
 
 Write-Host "" -ForegroundColor White
-Write-Host "🗑️  Starting resource cleanup..." -ForegroundColor Red
+Write-Host "[CLEANUP] Starting resource cleanup..." -ForegroundColor Red
 
 # Check Azure CLI authentication
 Write-Host "Step 1: Checking Azure CLI authentication..." -ForegroundColor Cyan
 try {
     $azAccount = az account show --output json | ConvertFrom-Json
-    Write-Host "✅ Authenticated as: $($azAccount.user.name)" -ForegroundColor Green
-    Write-Host "✅ Subscription: $($azAccount.name)" -ForegroundColor Green
+    Write-Host "[SUCCESS] Authenticated as: $($azAccount.user.name)" -ForegroundColor Green
+    Write-Host "[SUCCESS] Subscription: $($azAccount.name)" -ForegroundColor Green
 } catch {
-    Write-Host "❌ Not logged in to Azure. Please log in first with 'az login'" -ForegroundColor Red
+    Write-Host "[ERROR] Not logged in to Azure. Please log in first with 'az login'" -ForegroundColor Red
     exit 1
 }
 
@@ -113,17 +113,17 @@ Write-Host "`nStep 2: Deleting Web App and App Service Plan..." -ForegroundColor
 Write-Host "Deleting Web App: $webAppName" -ForegroundColor Yellow
 az webapp delete --name $webAppName --resource-group $resourceGroup 2>$null
 if ($LASTEXITCODE -eq 0) {
-    Write-Host "✅ Web App deleted" -ForegroundColor Green
+    Write-Host "[SUCCESS] Web App deleted" -ForegroundColor Green
 } else {
-    Write-Host "⚠️ Web App not found or already deleted" -ForegroundColor Yellow
+    Write-Host "[WARNING] Web App not found or already deleted" -ForegroundColor Yellow
 }
 
 Write-Host "Deleting App Service Plan: $appServicePlan" -ForegroundColor Yellow
 az appservice plan delete --name $appServicePlan --resource-group $resourceGroup --yes 2>$null
 if ($LASTEXITCODE -eq 0) {
-    Write-Host "✅ App Service Plan deleted" -ForegroundColor Green
+    Write-Host "[SUCCESS] App Service Plan deleted" -ForegroundColor Green
 } else {
-    Write-Host "⚠️ App Service Plan not found or already deleted" -ForegroundColor Yellow
+    Write-Host "[WARNING] App Service Plan not found or already deleted" -ForegroundColor Yellow
 }
 
 # Step 3: Delete Container Registry
@@ -131,9 +131,9 @@ Write-Host "`nStep 3: Deleting Azure Container Registry..." -ForegroundColor Cya
 Write-Host "Deleting ACR: $acrName" -ForegroundColor Yellow
 az acr delete --name $acrName --resource-group $resourceGroup --yes 2>$null
 if ($LASTEXITCODE -eq 0) {
-    Write-Host "✅ Container Registry deleted" -ForegroundColor Green
+    Write-Host "[SUCCESS] Container Registry deleted" -ForegroundColor Green
 } else {
-    Write-Host "⚠️ Container Registry not found or already deleted" -ForegroundColor Yellow
+    Write-Host "[WARNING] Container Registry not found or already deleted" -ForegroundColor Yellow
 }
 
 # Step 4: Delete Private Endpoint
@@ -141,9 +141,9 @@ Write-Host "`nStep 4: Deleting Private Endpoint..." -ForegroundColor Cyan
 Write-Host "Deleting Private Endpoint: $privateEndpointName" -ForegroundColor Yellow
 az network private-endpoint delete --name $privateEndpointName --resource-group $resourceGroup 2>$null
 if ($LASTEXITCODE -eq 0) {
-    Write-Host "✅ Private Endpoint deleted" -ForegroundColor Green
+    Write-Host "[SUCCESS] Private Endpoint deleted" -ForegroundColor Green
 } else {
-    Write-Host "⚠️ Private Endpoint not found or already deleted" -ForegroundColor Yellow
+    Write-Host "[WARNING] Private Endpoint not found or already deleted" -ForegroundColor Yellow
 }
 
 # Step 5: Delete OpenAI Service
@@ -151,9 +151,9 @@ Write-Host "`nStep 5: Deleting Azure OpenAI Service..." -ForegroundColor Cyan
 Write-Host "Deleting OpenAI Service: $openAIName" -ForegroundColor Yellow
 az cognitiveservices account delete --name $openAIName --resource-group $resourceGroup 2>$null
 if ($LASTEXITCODE -eq 0) {
-    Write-Host "✅ OpenAI Service deleted" -ForegroundColor Green
+    Write-Host "[SUCCESS] OpenAI Service deleted" -ForegroundColor Green
 } else {
-    Write-Host "⚠️ OpenAI Service not found or already deleted" -ForegroundColor Yellow
+    Write-Host "[WARNING] OpenAI Service not found or already deleted" -ForegroundColor Yellow
 }
 
 # Step 6: Purge Soft-Deleted OpenAI Services
@@ -166,13 +166,13 @@ if ($softDeleted -and $softDeleted.Count -gt 0) {
         Write-Host "Purging soft-deleted service: $($service.name)" -ForegroundColor Yellow
         az cognitiveservices account purge --name $service.name --resource-group $resourceGroup --location $service.location 2>$null
         if ($LASTEXITCODE -eq 0) {
-            Write-Host "✅ Purged: $($service.name)" -ForegroundColor Green
+            Write-Host "[SUCCESS] Purged: $($service.name)" -ForegroundColor Green
         } else {
-            Write-Host "⚠️ Failed to purge: $($service.name)" -ForegroundColor Yellow
+            Write-Host "[WARNING] Failed to purge: $($service.name)" -ForegroundColor Yellow
         }
     }
 } else {
-    Write-Host "✅ No soft-deleted services found" -ForegroundColor Green
+    Write-Host "[SUCCESS] No soft-deleted services found" -ForegroundColor Green
 }
 
 # Step 7: Delete VNet Subnets
@@ -180,17 +180,17 @@ Write-Host "`nStep 7: Deleting VNet Subnets..." -ForegroundColor Cyan
 Write-Host "Deleting subnet: $privateEndpointSubnetName" -ForegroundColor Yellow
 az network vnet subnet delete --name $privateEndpointSubnetName --vnet-name $vnetName --resource-group $resourceGroup 2>$null
 if ($LASTEXITCODE -eq 0) {
-    Write-Host "✅ Private endpoint subnet deleted" -ForegroundColor Green
+    Write-Host "[SUCCESS] Private endpoint subnet deleted" -ForegroundColor Green
 } else {
-    Write-Host "⚠️ Private endpoint subnet not found or already deleted" -ForegroundColor Yellow
+    Write-Host "[WARNING] Private endpoint subnet not found or already deleted" -ForegroundColor Yellow
 }
 
 Write-Host "Deleting subnet: $webAppSubnetName" -ForegroundColor Yellow
 az network vnet subnet delete --name $webAppSubnetName --vnet-name $vnetName --resource-group $resourceGroup 2>$null
 if ($LASTEXITCODE -eq 0) {
-    Write-Host "✅ Web app subnet deleted" -ForegroundColor Green
+    Write-Host "[SUCCESS] Web app subnet deleted" -ForegroundColor Green
 } else {
-    Write-Host "⚠️ Web app subnet not found or already deleted" -ForegroundColor Yellow
+    Write-Host "[WARNING] Web app subnet not found or already deleted" -ForegroundColor Yellow
 }
 
 # Step 8: Delete Network Security Groups
@@ -198,17 +198,17 @@ Write-Host "`nStep 8: Deleting Network Security Groups..." -ForegroundColor Cyan
 Write-Host "Deleting NSG: $privateEndpointNsgName" -ForegroundColor Yellow
 az network nsg delete --name $privateEndpointNsgName --resource-group $resourceGroup 2>$null
 if ($LASTEXITCODE -eq 0) {
-    Write-Host "✅ Private endpoint NSG deleted" -ForegroundColor Green
+    Write-Host "[SUCCESS] Private endpoint NSG deleted" -ForegroundColor Green
 } else {
-    Write-Host "⚠️ Private endpoint NSG not found or already deleted" -ForegroundColor Yellow
+    Write-Host "[WARNING] Private endpoint NSG not found or already deleted" -ForegroundColor Yellow
 }
 
 Write-Host "Deleting NSG: $webAppNsgName" -ForegroundColor Yellow
 az network nsg delete --name $webAppNsgName --resource-group $resourceGroup 2>$null
 if ($LASTEXITCODE -eq 0) {
-    Write-Host "✅ Web app NSG deleted" -ForegroundColor Green
+    Write-Host "[SUCCESS] Web app NSG deleted" -ForegroundColor Green
 } else {
-    Write-Host "⚠️ Web app NSG not found or already deleted" -ForegroundColor Yellow
+    Write-Host "[WARNING] Web app NSG not found or already deleted" -ForegroundColor Yellow
 }
 
 # Step 9: Verification
@@ -218,12 +218,12 @@ Write-Host "Checking remaining resources in $resourceGroup..." -ForegroundColor 
 $remainingResources = az resource list --resource-group $resourceGroup --query "[].{Name:name, Type:type}" --output json | ConvertFrom-Json
 
 if ($remainingResources -and $remainingResources.Count -gt 0) {
-    Write-Host "⚠️ Remaining resources found:" -ForegroundColor Yellow
+    Write-Host "[WARNING] Remaining resources found:" -ForegroundColor Yellow
     foreach ($resource in $remainingResources) {
         Write-Host "  - $($resource.Name) ($($resource.Type))" -ForegroundColor White
     }
 } else {
-    Write-Host "✅ No RECAP-specific resources remaining in resource group" -ForegroundColor Green
+    Write-Host "[SUCCESS] No RECAP-specific resources remaining in resource group" -ForegroundColor Green
 }
 
 # Step 10: Clean local generated files and Docker images
@@ -238,9 +238,9 @@ foreach ($file in $localFiles) {
     if (Test-Path $file) {
         Write-Host "Removing local file: $file" -ForegroundColor Yellow
         Remove-Item $file -Force
-        Write-Host "✅ Removed: $file" -ForegroundColor Green
+        Write-Host "[SUCCESS] Removed: $file" -ForegroundColor Green
     } else {
-        Write-Host "⚠️ File not found (already clean): $file" -ForegroundColor Yellow
+        Write-Host "[WARNING] File not found (already clean): $file" -ForegroundColor Yellow
     }
 }
 
@@ -259,12 +259,12 @@ foreach ($image in $dockerImages) {
         Write-Host "Removing Docker image: $image" -ForegroundColor Yellow
         docker rmi $image --force
         if ($LASTEXITCODE -eq 0) {
-            Write-Host "✅ Removed Docker image: $image" -ForegroundColor Green
+            Write-Host "[SUCCESS] Removed Docker image: $image" -ForegroundColor Green
         } else {
-            Write-Host "⚠️ Failed to remove Docker image: $image" -ForegroundColor Yellow
+            Write-Host "[WARNING] Failed to remove Docker image: $image" -ForegroundColor Yellow
         }
     } else {
-        Write-Host "⚠️ Docker image not found (already clean): $image" -ForegroundColor Yellow
+        Write-Host "[WARNING] Docker image not found (already clean): $image" -ForegroundColor Yellow
     }
 }
 
