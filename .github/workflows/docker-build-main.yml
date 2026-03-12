@@ -36,6 +36,21 @@ jobs:
       with:
         fetch-depth: '1'
         
+    - name: Check Azure credentials
+      run: |
+        if [ -z "${{ secrets.AZURE_CLIENT_ID }}" ]; then
+          echo "[ERROR] Azure credentials not configured yet"
+          echo "[INFO] Please configure these GitHub secrets:"
+          echo "   - AZURE_CLIENT_ID"
+          echo "   - AZURE_TENANT_ID"  
+          echo "   - AZURE_SUBSCRIPTION_ID"
+          echo ""
+          echo "[INFO] See documentation/RECAP-GitHub-Actions.md for setup instructions"
+          echo "[INFO] For now, use manual deployment from documentation/"
+          exit 1
+        fi
+        echo "[SUCCESS] Azure credentials are configured"
+        
     - name: Login to Azure using OIDC
       uses: azure/login@v2
       with:
@@ -91,9 +106,9 @@ jobs:
         # Check health endpoint
         HEALTH_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net/healthz --max-time 10)
         if [ "$HEALTH_STATUS" = "200" ]; then
-          echo "✅ Health check passed: $HEALTH_STATUS"
+          echo "[SUCCESS] Health check passed: $HEALTH_STATUS"
         else
-          echo "❌ Health check failed: $HEALTH_STATUS"
+          echo "[ERROR] Health check failed: $HEALTH_STATUS"
           exit 1
         fi
         
@@ -114,7 +129,7 @@ jobs:
           
     - name: Deployment summary
       run: |
-        echo "🚀 Production deployment completed successfully!"
-        echo "📱 Web App: https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net"
-        echo "🏷️ Container: ${{ env.ACR_NAME }}.azurecr.io/${{ env.ACR_REPOSITORY }}:latest"
-        echo "📝 Commit: ${{ steps.get_commit.outputs.SHA_SHORT }}"
+        echo "[SUCCESS] Production deployment completed successfully!"
+        echo "Web App: https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net"
+        echo "Container: ${{ env.ACR_NAME }}.azurecr.io/${{ env.ACR_REPOSITORY }}:latest"
+        echo "Commit: ${{ steps.get_commit.outputs.SHA_SHORT }}"
