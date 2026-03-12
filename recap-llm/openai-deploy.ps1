@@ -1,4 +1,4 @@
-# Azure OpenAI Service Deployment Script
+# Azure OpenAI Service Deployments
 # Creates the Azure OpenAI service for RECAP proxy
 # Private endpoints and networking are handled in recap-web-proxy folder
 
