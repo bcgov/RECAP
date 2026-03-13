@@ -1,4 +1,4 @@
-# Environment-aware Azure Container Registry (ACR) script
+# Environment-aware Azure Container Registry (ACR) script 
 # This script handles ONLY ACR operations: create, tag, login, and push
 # Web app deployment is handled separately for GitOps integration
 

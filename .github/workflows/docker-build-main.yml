@@ -32,7 +32,7 @@ jobs:
     
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         fetch-depth: '1'
         
@@ -67,6 +67,7 @@ jobs:
         docker stop test-container
         
     - name: GitHub Actions validation
+      if: false # Remove this when ready for production deployment
       run: |
         echo "[SUCCESS] Build completed successfully - exiting for testing"
         echo "Built image: ${{ env.ACR_REPOSITORY }}:latest"
@@ -74,6 +75,7 @@ jobs:
         exit 0
         
     - name: Check Azure credentials
+      if: false # Temporary skip step
       id: check_creds
       run: |
         if [ -z "${{ secrets.AZURE_CLIENT_ID }}" ]; then
@@ -92,7 +94,7 @@ jobs:
         fi
         
     - name: Login to Azure using OIDC
-      if: steps.check_creds.outputs.has_creds == 'true'
+      if: false # Temporary skip step
       uses: azure/login@v2
       with:
         client-id: ${{ secrets.AZURE_CLIENT_ID }}
@@ -100,12 +102,12 @@ jobs:
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
         
     - name: Login to Azure Container Registry
-      if: steps.check_creds.outputs.has_creds == 'true'
+      if: false # Temporary skip step
       run: |
         az acr login --name ${{ env.ACR_NAME }}
         
     - name: Tag and Push images to ACR
-      if: steps.check_creds.outputs.has_creds == 'true'
+      if: false # Temporary skip step
       run: |
         # Tag for ACR
         docker tag ${{ env.ACR_REPOSITORY }}:latest ${{ env.ACR_NAME }}.azurecr.io/${{ env.ACR_REPOSITORY }}:latest
@@ -118,7 +120,7 @@ jobs:
         docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.ACR_REPOSITORY }}:${{ steps.get_commit.outputs.SHA_SHORT }}
         
     - name: Update Azure Web App container image
-      if: steps.check_creds.outputs.has_creds == 'true'
+      if: false # Temporary skip step
       run: |
         az webapp config container set \
           --name ${{ env.AZURE_WEBAPP_NAME }} \
@@ -126,14 +128,14 @@ jobs:
           --container-image-name ${{ env.ACR_NAME }}.azurecr.io/${{ env.ACR_REPOSITORY }}:latest
           
     - name: Restart Azure Web App
-      if: steps.check_creds.outputs.has_creds == 'true'
+      if: false # Temporary skip step
       run: |
         az webapp restart \
           --name ${{ env.AZURE_WEBAPP_NAME }} \
           --resource-group ${{ env.AZURE_RESOURCE_GROUP }}
           
     - name: Verify deployment
-      if: steps.check_creds.outputs.has_creds == 'true'
+      if: false # Temporary skip step
       run: |
         echo "Waiting for deployment to stabilize..."
         sleep 30
@@ -155,7 +157,7 @@ jobs:
           --output table
           
     - name: Test OpenAI connectivity
-      if: steps.check_creds.outputs.has_creds == 'true'
+      if: false # Temporary skip step
       run: |
         echo "Testing OpenAI model connectivity..."
         # This would require API key from secrets - commented for now
@@ -164,7 +166,7 @@ jobs:
         echo "Note: OpenAI connectivity test requires API key configuration"
         
     - name: Azure deployment summary
-      if: steps.check_creds.outputs.has_creds == 'true'
+      if: false # Temporary skip step
       run: |
         echo "[SUCCESS] Production deployment completed successfully!"
         echo "Web App: https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net"
