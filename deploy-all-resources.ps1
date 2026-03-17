@@ -225,8 +225,8 @@ foreach ($step in $steps) {
 if ($success) {
     Write-Output "" | Tee-Object -FilePath $logFile -Append
     Write-Output "[INFO] Expected Final Result:" | Tee-Object -FilePath $logFile -Append
-    Write-Output "- [COMPLETE] All models working correctly!" | Tee-Object -FilePath $logFile -Append
-    Write-Output "- [SUCCESS] Success rate: 100%" | Tee-Object -FilePath $logFile -Append
+    Write-Output "- [INFO] All models working correctly!" | Tee-Object -FilePath $logFile -Append
+    Write-Output "- [INFO] Success rate: 100%" | Tee-Object -FilePath $logFile -Append
     Write-Output "" | Tee-Object -FilePath $logFile -Append    
     exit 0
 } else {

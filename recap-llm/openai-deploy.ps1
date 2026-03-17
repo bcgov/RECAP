@@ -198,7 +198,42 @@ if (-not $gpt5MiniExists) {
     }
 }
 
-Write-Host "Step 5: Creating text-embedding-3-large deployment..." -ForegroundColor Cyan
+Write-Host "Step 5: Creating GPT-5-nano deployment..." -ForegroundColor Cyan
+Write-Host "Note: GPT-5-nano is next-generation nano model with fastest response times" -ForegroundColor Yellow
+
+# Check if GPT-5-nano deployment already exists
+try {
+    $gpt5NanoCheck = az cognitiveservices account deployment show --name $openAIName --resource-group $ResourceGroup --deployment-name "gpt-5-nano" --query "name" --output tsv
+    if ($gpt5NanoCheck -eq "gpt-5-nano") {
+        Write-Host "[SUCCESS] GPT-5-nano deployment already exists, skipping..." -ForegroundColor Yellow
+        $gpt5NanoExists = $true
+    } else {
+        $gpt5NanoExists = $false
+    }
+} catch {
+    $gpt5NanoExists = $false
+}
+
+if (-not $gpt5NanoExists) {
+    $result = az cognitiveservices account deployment create `
+        --name $openAIName `
+        --resource-group $ResourceGroup `
+        --deployment-name "gpt-5-nano" `
+        --model-name "gpt-5-nano" `
+        --model-version "2025-08-07" `
+        --model-format OpenAI `
+        --sku-capacity 300 `
+        --sku-name "GlobalStandard"
+
+    if (-not $?) {
+        Write-Host "Failed to create GPT-5-nano deployment." -ForegroundColor Red
+        exit 1
+    } else {
+        Write-Host "GPT-5-nano deployment created successfully." -ForegroundColor Green
+    }
+}
+
+Write-Host "Step 6: Creating text-embedding-3-large deployment..." -ForegroundColor Cyan
 Write-Host "Note: text-embedding-3-large provides high-quality embeddings with enhanced rate limits" -ForegroundColor Yellow
 
 # Check if text-embedding-3-large deployment already exists
@@ -240,12 +275,14 @@ Write-Host "`nModel Deployments:" -ForegroundColor Green
 Write-Host "  - gpt-4o (2024-11-20): Standard SKU, capacity 150 - \$2.50/\$10.00 per M tokens" -ForegroundColor White
 Write-Host "  - gpt-4o-mini (2024-07-18): GlobalStandard SKU, capacity 250 - \$0.15/\$0.60 per M tokens (94% cheaper)" -ForegroundColor White
 Write-Host "  - gpt-5-mini (2025-08-07): GlobalStandard SKU, capacity 250 - Next-generation model" -ForegroundColor White
+Write-Host "  - gpt-5-nano (2025-08-07): GlobalStandard SKU, capacity 300 - Next-generation nano model (fastest)" -ForegroundColor White
 Write-Host "  - text-embedding-3-large (1): Standard SKU, capacity 150 - High-quality embeddings" -ForegroundColor White
 
 Write-Host "`nModel Endpoints:" -ForegroundColor Cyan
 Write-Host "  GPT-4o: https://$openAIName.openai.azure.com/openai/deployments/gpt-4o/chat/completions" -ForegroundColor White
 Write-Host "  GPT-4o-mini: https://$openAIName.openai.azure.com/openai/deployments/gpt-4o-mini/chat/completions" -ForegroundColor White
 Write-Host "  GPT-5-mini: https://$openAIName.openai.azure.com/openai/deployments/gpt-5-mini/chat/completions" -ForegroundColor White
+Write-Host "  GPT-5-nano: https://$openAIName.openai.azure.com/openai/deployments/gpt-5-nano/chat/completions" -ForegroundColor White
 Write-Host "  Embeddings: https://$openAIName.openai.azure.com/openai/deployments/text-embedding-3-large/embeddings" -ForegroundColor White
 
 Write-Host "`nGet API Key:" -ForegroundColor Cyan
