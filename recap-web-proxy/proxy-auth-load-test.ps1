@@ -6,7 +6,7 @@ param(
     [string]$ApiKey,
     [string]$ProxyUrl = "https://d837ad-test-recap-webapp.azurewebsites.net",
     [int]$Tests = 5,
-    [ValidateSet("gpt-4o", "gpt-4o-mini", "both")]
+    [ValidateSet("gpt-4o", "gpt-4o-mini", "gpt-5-mini", "gpt-5-nano", "both", "all")]
     [string]$Model = "both"
 )
 
@@ -51,7 +51,7 @@ function Test-ModelLoad {
                 -TimeoutSec 30
             
             if ($response.choices -and $response.choices[0].message.content) {
-                Write-Host "[SUCCESS] SUCCESS: $($response.choices[0].message.content.Trim())" -ForegroundColor Green
+                Write-Host "[SUCCESS] Complete: $($response.choices[0].message.content.Trim())" -ForegroundColor Green
                 
                 # Check for usage data
                 if ($response.usage) {
@@ -92,6 +92,8 @@ $modelResults = @()
 
 if ($Model -eq "both") {
     $modelsToTest = @("gpt-4o", "gpt-4o-mini")
+} elseif ($Model -eq "all") {
+    $modelsToTest = @("gpt-4o", "gpt-4o-mini", "gpt-5-mini", "gpt-5-nano")
 } else {
     $modelsToTest = @($Model)
 }

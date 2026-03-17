@@ -2,7 +2,7 @@ param(
     [string]$ApiKey,
     [ValidateSet("test", "prod")]
     [string]$Environment = "prod",
-    [ValidateSet("gpt-4o", "gpt-4o-mini", "gpt-5-mini", "all")]
+    [ValidateSet("gpt-4o", "gpt-4o-mini", "gpt-5-mini", "gpt-5-nano", "all")]
     [string]$Model = "all",
     [string]$Question = "Hello"
 )
@@ -65,7 +65,7 @@ function Test-Model {
         
         $response = Invoke-WebRequest -Uri $apiUrl -Method POST -Headers $Headers -Body $chatBody -UseBasicParsing
         
-        Write-Host "[SUCCESS] SUCCESS!" -ForegroundColor Green
+        Write-Host "[SUCCESS] Complete!" -ForegroundColor Green
         $json = $response.Content | ConvertFrom-Json
         
         $responseContent = $json.choices[0].message.content
@@ -95,7 +95,7 @@ $successCount = 0
 $totalTests = 0
 
 if ($Model -eq "all") {
-    $modelsToTest = @("gpt-4o", "gpt-4o-mini", "gpt-5-mini")
+    $modelsToTest = @("gpt-4o", "gpt-4o-mini", "gpt-5-mini", "gpt-5-nano")
 } elseif ($Model -eq "both") {
     # Backward compatibility - test original two models
     $modelsToTest = @("gpt-4o", "gpt-4o-mini")

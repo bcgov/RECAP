@@ -1,9 +1,9 @@
 # RECAP
 RECAP LLM Responsible Evaluation And Consolidated Analytics Platform
 
-[![Lifecycle:Experimental](https://img.shields.io/badge/Lifecycle-Experimental-339999)](https://github.com/bcgov/repomountie/blob/master/doc/lifecycle-badges.m)
+[![Lifecycle:Stable](https://img.shields.io/badge/Lifecycle-Stable-97ca00)](https://github.com/bcgov/repomountie/blob/master/doc/lifecycle-badges.md)
 
-The project is in the very early stages of development. The codebase will be changing frequently.
+The project is in a reliable state and major changes are unlikely to happen.
 
 ## Documentation
 

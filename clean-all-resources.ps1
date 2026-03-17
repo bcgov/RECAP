@@ -64,7 +64,7 @@ $webAppSubnetName = "d837ad-$Environment-webapp-integration-subnet"
 $privateEndpointNsgName = "d837ad-$Environment-pe-nsg"
 $webAppNsgName = "d837ad-$Environment-webapp-nsg"
 
-Write-Host "[WARNING]  WARNING: This will DELETE the following resources:" -ForegroundColor Red
+Write-Host "[WARNING]  Urgent: This will DELETE the following resources:" -ForegroundColor Red
 Write-Host "" -ForegroundColor White
 Write-Host "Resource Group: $resourceGroup" -ForegroundColor Yellow
 Write-Host "  ├── Azure OpenAI Service: $openAIName" -ForegroundColor White
