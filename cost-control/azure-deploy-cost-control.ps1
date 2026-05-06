@@ -123,7 +123,7 @@ try {
             } else {
                 try {
                     $websiteRoleAssignment = New-AzRoleAssignment -ObjectId $principalId -RoleDefinitionName "Website Contributor" -Scope $webappScope -ErrorAction Stop
-                    Write-Output "Assigned Website Contributor role"
+                    Write-Output "Assigned Website Contributor role to: $($websiteRoleAssignment.DisplayName) (ID: $($websiteRoleAssignment.ObjectId))"
                 } catch {
                     Write-Output "[ERROR] Failed to assign Website Contributor role: $($_.Exception.Message)"
                     Write-Output "Manual assignment required: New-AzRoleAssignment -ObjectId $principalId -RoleDefinitionName 'Website Contributor' -Scope '$webappScope'"
@@ -142,7 +142,7 @@ try {
                 try {
                     # Try with different parameters to avoid BadRequest error
                     $roleAssignment = New-AzRoleAssignment -ObjectId $principalId -RoleDefinitionName "Reader" -Scope $subscriptionScope -ErrorAction Stop
-                    Write-Output "Assigned Reader role"
+                    Write-Output "Assigned Reader role to: $($roleAssignment.DisplayName) (ID: $($roleAssignment.ObjectId))"
                 } catch {
                     Write-Output "[WARNING] Failed to assign Reader role: $($_.Exception.Message)"
                     Write-Output "This is often acceptable - the automation account may work with just Website Contributor role"
@@ -259,11 +259,13 @@ try {
     Write-Output "- Monthly Schedule: Runs 1st of each month at 6:00 AM local (1:00 PM UTC)"
     Write-Output ""
     Write-Output "Next steps:"
-    Write-Output "1. Wait 10-15 minutes for PowerShell modules to import"
-    Write-Output "2. Configure budget integration:"
+    Write-Output "1. Configure budget integration:"
     Write-Output "   .\azure-configure-budget-integration.ps1 -Environment $Environment"
-    Write-Output "3. Test the system:"
-    Write-Output "   .\\azure-verify-cost-control.ps1 -Environment $Environment -DryRun"
+    Write-Output "2. Test the system:"
+    Write-Output "   .\azure-verify-cost-control.ps1 -Environment $Environment -DryRun"
+    Write-Output ""
+    Write-Output "Note: PowerShell modules import automatically in the background."
+    Write-Output "   .\azure-verify-cost-control.ps1 -Environment $Environment -TestShutdown"
     Write-Output ""
 
 } catch {

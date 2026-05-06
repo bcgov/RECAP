@@ -64,13 +64,29 @@ function Test-AzureResource {
         [string]$TestCommand
     )
     
+    Write-Host "Testing $ResourceType : $Name"
+    
     try {
-        Write-Output "Testing $ResourceType : $Name"
-        Invoke-Expression $TestCommand | Out-Null
-        Write-Output "[SUCCESS] $ResourceType found and accessible"
-        return $true
+        # Temporarily change error action preference for this test
+        $previousErrorAction = $ErrorActionPreference
+        $ErrorActionPreference = "Continue"
+        
+        # Execute Azure CLI command and capture both output and error
+        $result = Invoke-Expression "$TestCommand 2>&1" 
+        $exitCode = $LASTEXITCODE
+        
+        # Restore error action preference
+        $ErrorActionPreference = $previousErrorAction
+        
+        if ($exitCode -eq 0 -and $result -and $result -notlike "*not found*" -and $result -notlike "*ResourceNotFound*") {
+            Write-Host "[SUCCESS] $ResourceType found and accessible"
+            return $true
+        } else {
+            Write-Host "[FAILED] $ResourceType not found or inaccessible"
+            return $false
+        }
     } catch {
-        Write-Output "[FAILED] $ResourceType not found or inaccessible: $_"
+        Write-Host "[FAILED] $ResourceType not found or inaccessible: $_"
         return $false
     }
 }
@@ -85,6 +101,21 @@ function Test-BudgetConfiguration {
     try {
         Write-Output "Testing budget configuration: $BudgetName"
         
+        # First check if budget exists
+        $previousErrorAction = $ErrorActionPreference
+        $ErrorActionPreference = "Continue"
+        
+        $budgetCheck = az consumption budget show --budget-name $BudgetName --query "name" --output tsv 2>$null
+        $budgetExitCode = $LASTEXITCODE
+        
+        $ErrorActionPreference = $previousErrorAction
+        
+        if ($budgetExitCode -ne 0 -or -not $budgetCheck) {
+            Write-Output "[FAILED] Budget does not exist: $BudgetName"
+            Write-Output "Run: .\azure-configure-budget-integration.ps1 -Environment $((Split-Path $ResourceGroup -Leaf) -replace 'd837ad-(.+)-networking','$1')"
+            return $false
+        }
+        
         # Get budget info
         $budgetInfo = az consumption budget show --budget-name $BudgetName --query "{amount: amount, currentSpend: currentSpend, notifications: notifications}" --output json | ConvertFrom-Json
         
@@ -92,6 +123,27 @@ function Test-BudgetConfiguration {
         Write-Output "Current Spend: $($budgetInfo.currentSpend.amount) CAD"
         $percentage = [math]::Round(($budgetInfo.currentSpend.amount / $budgetInfo.amount) * 100, 2)
         Write-Output "Usage Percentage: $percentage%"
+        
+        # First verify the action group actually exists
+        $actionGroupExists = $false
+        try {
+            $previousErrorAction = $ErrorActionPreference
+            $ErrorActionPreference = "Continue"
+            
+            $actionGroupTest = az monitor action-group show --name $ActionGroupName --resource-group $ResourceGroup --query "name" --output tsv 2>$null
+            $exitCode = $LASTEXITCODE
+            
+            $ErrorActionPreference = $previousErrorAction
+            
+            if ($exitCode -eq 0 -and $actionGroupTest -and $actionGroupTest -eq $ActionGroupName) {
+                $actionGroupExists = $true
+                Write-Output "Action Group exists: $ActionGroupName"
+            } else {
+                Write-Output "[FAILED] Action Group does not exist: $ActionGroupName"
+            }
+        } catch {
+            Write-Output "[FAILED] Could not verify Action Group existence: $_"
+        }
         
         # Check action group integration
         $actionGroupId = "/subscriptions/$((az account show --query id --output tsv))/resourcegroups/$ResourceGroup/providers/microsoft.insights/actiongroups/$ActionGroupName"
@@ -102,18 +154,28 @@ function Test-BudgetConfiguration {
             foreach ($notification in $notifications) {
                 $alert = $budgetInfo.notifications.$notification
                 if ($alert.contactGroups -contains $actionGroupId) {
-                    $isLinked = $true
-                    Write-Output "[SUCCESS] Action group linked to alert: $notification (Threshold: $($alert.threshold)%)"
+                    if ($actionGroupExists) {
+                        $isLinked = $true
+                        Write-Output "[SUCCESS] Action group linked to alert: $notification (Threshold: $($alert.threshold)%)"
+                    } else {
+                        Write-Output "[FAILED] Budget references non-existent action group in alert: $notification"
+                    }
                 }
             }
         }
         
         if (-not $isLinked) {
-            Write-Output "[WARNING] Action group is not linked to any budget alerts"
-            Write-Output "Manual configuration required in Azure Portal"
+            if (-not $actionGroupExists) {
+                Write-Output "[FAILED] Action group does not exist and cannot be linked to budget alerts"
+                Write-Output "Run: .\azure-deploy-cost-control.ps1 -Environment $((Split-Path $ResourceGroup -Leaf) -replace 'd837ad-(.+)-networking','$1')"
+            } else {
+                Write-Output "[WARNING] Action group exists but is not linked to any budget alerts"
+                Write-Output "Run: .\azure-configure-budget-integration.ps1 -Environment $((Split-Path $ResourceGroup -Leaf) -replace 'd837ad-(.+)-networking','$1')"
+            }
         }
         
-        return $isLinked
+        # Return true only if action group exists AND is properly linked
+        return ($actionGroupExists -and $isLinked)
         
     } catch {
         Write-Output "[FAILED] Budget configuration test failed: $_"
@@ -220,13 +282,25 @@ try {
         # Test Runbook
         if ($automationTest) {
             try {
-                $runbooks = az automation runbook list --resource-group $envConfig.ResourceGroup --automation-account-name $envConfig.AutomationAccountName --query "[].name" --output tsv
-                $expectedRunbookName = "d837ad-$Environment-cost-control-runbook"
-                if ($runbooks -contains $expectedRunbookName) {
-                    Write-Output "[SUCCESS] Runbook found: $expectedRunbookName"
-                    $testResults["Runbook"] = $true
+                $previousErrorAction = $ErrorActionPreference
+                $ErrorActionPreference = "Continue"
+                
+                $runbooks = az automation runbook list --resource-group $envConfig.ResourceGroup --automation-account-name $envConfig.AutomationAccountName --query "[].name" --output tsv 2>$null
+                $exitCode = $LASTEXITCODE
+                
+                $ErrorActionPreference = $previousErrorAction
+                
+                if ($exitCode -eq 0 -and $runbooks) {
+                    $expectedRunbookName = "d837ad-$Environment-cost-control-runbook"
+                    if ($runbooks -contains $expectedRunbookName) {
+                        Write-Output "[SUCCESS] Runbook found: $expectedRunbookName"
+                        $testResults["Runbook"] = $true
+                    } else {
+                        Write-Output "[FAILED] Runbook not found: $expectedRunbookName"
+                        $testResults["Runbook"] = $false
+                    }
                 } else {
-                    Write-Output "[FAILED] Runbook not found: $expectedRunbookName"
+                    Write-Output "[FAILED] Could not list runbooks - automation account may not exist"
                     $testResults["Runbook"] = $false
                 }
             } catch {
@@ -234,6 +308,7 @@ try {
                 $testResults["Runbook"] = $false
             }
         } else {
+            Write-Output "[FAILED] Runbook check skipped - automation account not accessible"
             $testResults["Runbook"] = $false
         }
         
@@ -247,8 +322,13 @@ try {
     # Test budget integration
     if ($CheckBudgetIntegration -or (-not $CheckInfrastructure -and -not $CheckPermissions -and -not $TestWebhook -and -not $TestShutdown)) {
         Write-Output "=== BUDGET INTEGRATION TESTING ==="
+        Write-Output "Testing budget: $($envConfig.BudgetName)"
+        Write-Output "Expected action group: $($envConfig.ActionGroupName)"
         $budgetTest = Test-BudgetConfiguration -BudgetName $envConfig.BudgetName -ActionGroupName $envConfig.ActionGroupName -ResourceGroup $envConfig.ResourceGroup
-        $testResults["BudgetIntegration"] = $budgetTest
+        # Extract only the boolean result (last line of function output)
+        $budgetResult = if ($budgetTest -is [array]) { $budgetTest[-1] } else { $budgetTest }
+        Write-Output "Budget test result: $budgetResult"
+        $testResults["BudgetIntegration"] = $budgetResult
         Write-Output ""
     }
 
@@ -294,13 +374,15 @@ try {
         Write-Output ""
     }
 
-    # Test webhook
-    if ($TestWebhook) {
+    # Test webhook (included in infrastructure check if no specific tests specified)
+    if ($TestWebhook -or ($CheckInfrastructure -or (-not $CheckBudgetIntegration -and -not $CheckPermissions -and -not $TestShutdown))) {
         Write-Output "=== WEBHOOK TESTING ==="
         
         try {
             # NOTE: 'az automation webhook' does not exist in the current az automation extension.
             # Use Az PowerShell (Az.Automation) for webhook discovery.
+            Import-Module Az.Automation -Force -ErrorAction SilentlyContinue
+            
             $expectedRunbookName = "d837ad-$Environment-cost-control-runbook"
             $webhooks = Get-AzAutomationWebhook `
                 -ResourceGroupName $envConfig.ResourceGroup `
@@ -313,15 +395,28 @@ try {
                 Write-Output "Runbook: $($webhook.RunbookName)"
                 Write-Output "IsEnabled: $($webhook.IsEnabled)"
                 Write-Output "ExpiryTime: $($webhook.ExpiryTime)"
+                
+                # Check if webhook is expired or expiring soon
+                $daysUntilExpiry = ($webhook.ExpiryTime - (Get-Date)).Days
+                if ($daysUntilExpiry -le 0) {
+                    Write-Output "[WARNING] Webhook has EXPIRED! Budget alerts will not trigger automation."
+                    Write-Output "Run: .\azure-configure-budget-integration.ps1 -Environment $Environment"
+                } elseif ($daysUntilExpiry -le 30) {
+                    Write-Output "[WARNING] Webhook expires in $daysUntilExpiry days"
+                }
+                
                 $testResults["Webhook"] = $true
             } else {
                 Write-Output "[FAILED] No webhook found for cost control runbook"
-                Write-Output "Create webhook in Azure Portal or with New-AzAutomationWebhook (see setup-guide.md Step 5)"
+                Write-Output "[ERROR] Webhook missing. Budget alerts will NOT trigger automation."
+                Write-Output "Run: .\azure-configure-budget-integration.ps1 -Environment $Environment"
                 $testResults["Webhook"] = $false
             }
         } catch {
             Write-Output "[FAILED] Could not check webhooks: $_"
             Write-Output "If this is a NullReferenceException, run Connect-AzAccount first (Az PowerShell auth is separate from az login)."
+            Write-Output "[ERROR] Unable to verify webhook status. Budget alerts may not work."
+            Write-Output "Run: .\azure-configure-budget-integration.ps1 -Environment $Environment"
             $testResults["Webhook"] = $false
         }
         Write-Output ""
@@ -330,6 +425,38 @@ try {
     # Test shutdown capability
     if ($TestShutdown) {
         Write-Output "=== SHUTDOWN TESTING ==="
+        
+        # Check infrastructure dependencies
+        if ($testResults["AutomationAccount"] -eq $false -or $testResults["Runbook"] -eq $false) {
+            # Auto-run infrastructure check if not already done
+            if (-not $testResults.ContainsKey("AutomationAccount")) {
+                Write-Output "Checking required infrastructure for runbook testing..."
+                
+                # Test Automation Account
+                $automationTest = Test-AzureResource -ResourceType "Automation Account" -Name $envConfig.AutomationAccountName -ResourceGroup $envConfig.ResourceGroup -TestCommand "az automation account show --name '$($envConfig.AutomationAccountName)' --resource-group '$($envConfig.ResourceGroup)' --query 'name' --output tsv"
+                $testResults["AutomationAccount"] = $automationTest
+                
+                # Test Runbook
+                if ($automationTest) {
+                    try {
+                        $runbooks = az automation runbook list --resource-group $envConfig.ResourceGroup --automation-account-name $envConfig.AutomationAccountName --query "[].name" --output tsv
+                        $expectedRunbookName = "d837ad-$Environment-cost-control-runbook"
+                        if ($runbooks -contains $expectedRunbookName) {
+                            Write-Output "[SUCCESS] Runbook found: $expectedRunbookName"
+                            $testResults["Runbook"] = $true
+                        } else {
+                            Write-Output "[FAILED] Runbook not found: $expectedRunbookName"
+                            $testResults["Runbook"] = $false
+                        }
+                    } catch {
+                        Write-Output "[FAILED] Could not list runbooks: $_"
+                        $testResults["Runbook"] = $false
+                    }
+                } else {
+                    $testResults["Runbook"] = $false
+                }
+            }
+        }
         
         if ($testResults["AutomationAccount"] -ne $false -and $testResults["Runbook"] -ne $false) {
             $shutdownTest = Test-RunbookExecution -ResourceGroup $envConfig.ResourceGroup -AutomationAccountName $envConfig.AutomationAccountName -WebAppName $envConfig.WebAppName -Environment $Environment -DryRunMode $DryRun
@@ -354,76 +481,83 @@ try {
     }
     Write-Output ""
 
-    # Manual runbook test
+    # Manual startup runbook test
     if ($TestStartUp) {
-        Write-Output "=== MANUAL RUNBOOK TEST ==="
-        try {
-            Write-Output "Testing shutdown runbook manually..."
-            Write-Output "Runbook: d837ad-$Environment-cost-control-runbook"
-            Write-Output "Parameters: WebAppName=$($envConfig.WebAppName), ResourceGroupName=$($envConfig.ResourceGroup)"
-            
-            if (-not $DryRun) {
-                $jobResult = Start-AzAutomationRunbook `
-                    -ResourceGroupName $envConfig.ResourceGroup `
-                    -AutomationAccountName $envConfig.AutomationAccountName `
-                    -Name "d837ad-$Environment-cost-control-runbook" `
-                    -Parameters @{
-                        WebAppName = $envConfig.WebAppName
-                        ResourceGroupName = $envConfig.ResourceGroup
-                    }
-                
-                if ($jobResult) {
-                    Write-Output "[SUCCESS] Runbook job started successfully"
-                    Write-Output "Job ID: $($jobResult.JobId)"
-                    Write-Output "Status: $($jobResult.Status)"
-                    Write-Output "Creation Time: $($jobResult.CreationTime)"
-                    $testResults["ManualRunbookTest"] = $true
-                    
-                    Write-Output ""
-                    Write-Output "Monitor job completion in Azure Portal or wait 2-3 minutes and check webapp status"
-                } else {
-                    Write-Output "[FAILED] Runbook job failed to start"
-                    $testResults["ManualRunbookTest"] = $false
-                }
-            } else {
-                Write-Output "[DRY RUN] Would execute: Start-AzAutomationRunbook -Name 'd837ad-$Environment-cost-control-runbook'"
-                $testResults["ManualRunbookTest"] = $true
-            }
-            
-        } catch {
-            Write-Output "[FAILED] Manual runbook test failed: $_"
-            Write-Output "Make sure you're connected to Azure PowerShell: Connect-AzAccount"
-            $testResults["ManualRunbookTest"] = $false
-        }
-        Write-Output ""
+        Write-Output "=== STARTUP RUNBOOK TEST ==="
         
-        # Also test startup runbook if available
-        Write-Output "Testing monthly startup runbook manually..."
-        try {
-            if (-not $DryRun) {
-                $startupJobResult = Start-AzAutomationRunbook `
-                    -ResourceGroupName $envConfig.ResourceGroup `
-                    -AutomationAccountName $envConfig.AutomationAccountName `
-                    -Name "d837ad-$Environment-monthly-startup-runbook" `
-                    -Parameters @{
-                        WebAppName = $envConfig.WebAppName
-                        ResourceGroupName = $envConfig.ResourceGroup
-                    }
+        # Check infrastructure dependencies
+        if ($testResults["AutomationAccount"] -eq $false -or $testResults["Runbook"] -eq $false) {
+            # Auto-run infrastructure check if not already done
+            if (-not $testResults.ContainsKey("AutomationAccount")) {
+                Write-Output "Checking required infrastructure for runbook testing..."
                 
-                if ($startupJobResult) {
-                    Write-Output "[SUCCESS] Monthly startup runbook job started successfully"
-                    Write-Output "Job ID: $($startupJobResult.JobId)"
-                    $testResults["ManualStartupTest"] = $true
+                # Test Automation Account
+                $automationTest = Test-AzureResource -ResourceType "Automation Account" -Name $envConfig.AutomationAccountName -ResourceGroup $envConfig.ResourceGroup -TestCommand "az automation account show --name '$($envConfig.AutomationAccountName)' --resource-group '$($envConfig.ResourceGroup)' --query 'name' --output tsv"
+                $testResults["AutomationAccount"] = $automationTest
+                
+                # Test Runbook
+                if ($automationTest) {
+                    try {
+                        $runbooks = az automation runbook list --resource-group $envConfig.ResourceGroup --automation-account-name $envConfig.AutomationAccountName --query "[].name" --output tsv
+                        $expectedRunbookName = "d837ad-$Environment-monthly-startup-runbook"
+                        if ($runbooks -contains $expectedRunbookName) {
+                            Write-Output "[SUCCESS] Startup runbook found: $expectedRunbookName"
+                            $testResults["StartupRunbook"] = $true
+                        } else {
+                            Write-Output "[FAILED] Startup runbook not found: $expectedRunbookName"
+                            $testResults["StartupRunbook"] = $false
+                        }
+                    } catch {
+                        Write-Output "[FAILED] Could not list runbooks: $_"
+                        $testResults["StartupRunbook"] = $false
+                    }
                 } else {
-                    Write-Output "[FAILED] Monthly startup runbook job failed to start"
-                    $testResults["ManualStartupTest"] = $false
+                    $testResults["StartupRunbook"] = $false
                 }
-            } else {
-                Write-Output "[DRY RUN] Would execute: Start-AzAutomationRunbook -Name 'd837ad-$Environment-monthly-startup-runbook'"
-                $testResults["ManualStartupTest"] = $true
             }
-        } catch {
-            Write-Output "[FAILED] Monthly startup runbook test failed: $_"
+        }
+        
+        if ($testResults["AutomationAccount"] -ne $false -and ($testResults["StartupRunbook"] -ne $false -or $testResults["Runbook"] -ne $false)) {
+            try {
+                Write-Output "Testing monthly startup runbook manually..."
+                Write-Output "Runbook: d837ad-$Environment-monthly-startup-runbook"
+                Write-Output "Parameters: WebAppName=$($envConfig.WebAppName), ResourceGroupName=$($envConfig.ResourceGroup)"
+                
+                if (-not $DryRun) {
+                    $startupJobResult = Start-AzAutomationRunbook `
+                        -ResourceGroupName $envConfig.ResourceGroup `
+                        -AutomationAccountName $envConfig.AutomationAccountName `
+                        -Name "d837ad-$Environment-monthly-startup-runbook" `
+                        -Parameters @{
+                            WebAppName = $envConfig.WebAppName
+                            ResourceGroupName = $envConfig.ResourceGroup
+                        }
+                    
+                    if ($startupJobResult) {
+                        Write-Output "[SUCCESS] Monthly startup runbook job started successfully"
+                        Write-Output "Job ID: $($startupJobResult.JobId)"
+                        Write-Output "Status: $($startupJobResult.Status)"
+                        Write-Output "Creation Time: $($startupJobResult.CreationTime)"
+                        $testResults["ManualStartupTest"] = $true
+                        
+                        Write-Output ""
+                        Write-Output "Monitor job completion in Azure Portal or wait 2-3 minutes and check webapp status"
+                    } else {
+                        Write-Output "[FAILED] Monthly startup runbook job failed to start"
+                        $testResults["ManualStartupTest"] = $false
+                    }
+                } else {
+                    Write-Output "[DRY RUN] Would execute: Start-AzAutomationRunbook -Name 'd837ad-$Environment-monthly-startup-runbook'"
+                    $testResults["ManualStartupTest"] = $true
+                }
+                
+            } catch {
+                Write-Output "[FAILED] Monthly startup runbook test failed: $_"
+                Write-Output "Make sure you're connected to Azure PowerShell: Connect-AzAccount"
+                $testResults["ManualStartupTest"] = $false
+            }
+        } else {
+            Write-Output "[SKIPPED] Automation infrastructure not available for startup testing"
             $testResults["ManualStartupTest"] = $false
         }
         Write-Output ""
@@ -466,7 +600,7 @@ try {
             Write-Output "2. Run: .\azure-configure-budget-integration.ps1 -Environment $Environment"
         }
         if ($testResults["Webhook"] -eq $false) {
-            Write-Output "3. Create webhook manually in Azure Portal"
+            Write-Output "3. Run: .\azure-configure-budget-integration.ps1 -Environment $Environment"
         }
         if ($testResults["Permissions"] -eq $false) {
             Write-Output "4. Check automation account permissions"

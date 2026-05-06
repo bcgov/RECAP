@@ -44,9 +44,9 @@ function Test-Model {
     # GPT-5 models use max_completion_tokens instead of max_tokens
     # GPT-5 also uses reasoning tokens, so needs much higher limits for visible output
     if ($ModelName -like "gpt-5*") {
-        $chatBody.max_completion_tokens = 500
+        $chatBody.max_completion_tokens = 1500
     } else {
-        $chatBody.max_tokens = 50
+        $chatBody.max_tokens = 150
     }
     
     $chatBody = $chatBody | ConvertTo-Json

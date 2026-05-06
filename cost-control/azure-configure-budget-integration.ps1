@@ -110,14 +110,10 @@ try {
             # Create budget via REST API (more reliable than Azure CLI)  
             $budgetCreateUrl = "https://management.azure.com/subscriptions/$subscriptionId/providers/Microsoft.Consumption/budgets/$targetBudgetName" + "?api-version=2023-05-01"
             
-            # Calculate start date (current month if 1st, otherwise next month)
+            # Calculate start date (always current month to track existing spending)
             $currentDate = Get-Date
-            if ($currentDate.Day -eq 1) {
-                $startDate = $currentDate.ToString("yyyy-MM-01T00:00:00Z")
-            } else {
-                $nextMonth = $currentDate.AddMonths(1)
-                $startDate = $nextMonth.ToString("yyyy-MM-01T00:00:00Z")
-            }
+            $startDate = $currentDate.ToString("yyyy-MM-01T00:00:00Z")
+            Write-Output "Setting budget start date to current month: $startDate"
             $endDate = "2036-12-31T00:00:00Z"  # 10-year maximum
             
             # Create basic budget (alerts will be configured later in this script)
@@ -340,73 +336,83 @@ try {
             # Action group resource ID
             $actionGroupId = "/subscriptions/$($context.id)/resourcegroups/$($envConfig.ResourceGroup)/providers/microsoft.insights/actiongroups/$($envConfig.ActionGroupName)"
             
-            # Get existing budget to preserve settings
+            # Get existing budget to preserve ALL settings including cost tracking state
             $budgetUrl = "https://management.azure.com/subscriptions/$($context.id)/providers/Microsoft.Consumption/budgets/$targetBudgetName" + "?api-version=2023-05-01"
             $budgetJson = az rest --method get --url $budgetUrl --output json
             $budget = $budgetJson | ConvertFrom-Json
             
-            Write-Output "Updating budget with action group linkage..."
+            Write-Output "Updating budget notifications with action group linkage..."
+            Write-Output "PRESERVING: amount=$($budget.properties.amount), period=$($budget.properties.timePeriod.startDate) to $($budget.properties.timePeriod.endDate)"
             
-            # Update budget with all thresholds linked to action group
-            # NOTE: This REPLACES the entire notifications object to ensure no unwanted thresholds remain
+            # CRITICAL: Preserve ALL existing budget properties to maintain cost tracking
+            # Only update notifications - keep amount, timePeriod, category, etc. exactly as-is
             $budgetBody = @{
-                properties = @{
-                    category   = $budget.properties.category
-                    amount     = $budget.properties.amount
-                    timeGrain  = $budget.properties.timeGrain
-                    timePeriod = $budget.properties.timePeriod
-                    notifications = @{
-                        actual_GreaterThanOrEqualTo_30_Percent = @{
-                            enabled = $true
-                            operator = "GreaterThanOrEqualTo"
-                            threshold = 30
-                            contactEmails = @($userEmail)
-                            contactGroups = @($actionGroupId)
-                            notificationLanguage = "en-us"
-                        }
-                        actual_GreaterThanOrEqualTo_50_Percent = @{
-                            enabled = $true
-                            operator = "GreaterThanOrEqualTo"
-                            threshold = 50
-                            contactEmails = @($userEmail)
-                            contactGroups = @($actionGroupId)
-                            notificationLanguage = "en-us"
-                        }
-                        forecasted_GreaterThanOrEqualTo_75_Percent = @{
-                            enabled = $true
-                            operator = "GreaterThanOrEqualTo"
-                            threshold = 75
-                            contactEmails = @($userEmail)
-                            contactGroups = @()
-                            notificationLanguage = "en-us"
-                        }
-                        actual_GreaterThanOrEqualTo_80_Percent = @{
-                            enabled = $true
-                            operator = "GreaterThanOrEqualTo"
-                            threshold = 80
-                            contactEmails = @($userEmail)
-                            contactGroups = @($actionGroupId)
-                            notificationLanguage = "en-us"
-                        }
-                    }
+                properties = $budget.properties.PSObject.Copy()
+            }
+            
+            # Replace ONLY the notifications section with action group integration
+            $budgetBody.properties.notifications = [ordered]@{
+                forecasted_GreaterThanOrEqualTo_75_Percent = @{
+                    enabled = $true
+                    operator = "GreaterThanOrEqualTo"
+                    threshold = 75
+                    thresholdType = "Forecasted"
+                    contactEmails = @($userEmail)
+                    contactGroups = @()
+                    notificationLanguage = "en-us"
                 }
-            } | ConvertTo-Json -Depth 10
+                actual_GreaterThanOrEqualTo_80_Percent = @{
+                    enabled = $true
+                    operator = "GreaterThanOrEqualTo"
+                    threshold = 80
+                    contactEmails = @($userEmail)
+                    contactGroups = @($actionGroupId)
+                    notificationLanguage = "en-us"
+                }
+                actual_GreaterThanOrEqualTo_50_Percent = @{
+                    enabled = $true
+                    operator = "GreaterThanOrEqualTo"
+                    threshold = 50
+                    contactEmails = @($userEmail)
+                    contactGroups = @($actionGroupId)
+                    notificationLanguage = "en-us"
+                }
+                actual_GreaterThanOrEqualTo_40_Percent = @{
+                    enabled = $true
+                    operator = "GreaterThanOrEqualTo"
+                    threshold = 40
+                    contactEmails = @($userEmail)
+                    contactGroups = @() 
+                    notificationLanguage = "en-us"
+                }
+                actual_GreaterThanOrEqualTo_30_Percent = @{
+                    enabled = $true
+                    operator = "GreaterThanOrEqualTo"
+                    threshold = 30
+                    contactEmails = @($userEmail)
+                    contactGroups = @() 
+                    notificationLanguage = "en-us"
+                }
+            }
 
+            $budgetBodyJson = $budgetBody | ConvertTo-Json -Depth 10
             $tempFile = "$env:TEMP\budget-link-body.json"
-            $budgetBody | Out-File -Encoding utf8 -FilePath $tempFile
+            $budgetBodyJson | Out-File -Encoding utf8 -FilePath $tempFile
 
             az rest --method put --url $budgetUrl --headers "Content-Type=application/json" --body "@$tempFile"
             
             if ($LASTEXITCODE -eq 0) {
-                Write-Output " Budget alerts successfully linked to action group!"
+                Write-Output "[SUCCESS] Budget notifications updated without affecting cost tracking"
                 Write-Output ""
                 Write-Output "Alert configuration:"
-                Write-Output "- 30% threshold → Email + Action Group (early warning)"
+                Write-Output "- 30% threshold → Email Only (early warning)"
                 Write-Output "- 50% threshold → Email + Action Group (investigate)" 
                 Write-Output "- 75% threshold → Email Only (forecasted cost warning)"
                 Write-Output "- 80% threshold → Email + Action Group (triggers automation)"
+                Write-Output ""
+                Write-Output "Cost tracking preserved: Current spend and forecasting data maintained"
             } else {
-                throw "Budget update failed"
+                throw "Budget notification update failed"
             }
             
             Remove-Item $tempFile -Force -ErrorAction SilentlyContinue
