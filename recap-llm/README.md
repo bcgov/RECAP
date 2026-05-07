@@ -1,19 +1,19 @@
 # RECAP Azure OpenAI Service Deployment
 
-This folder contains scripts for deploying **only** the Azure OpenAI service (Cognitive Services account and GPT-4o model deployment).
+This folder contains scripts for deploying **only** the Azure OpenAI service (Cognitive Services account with five AI model deployments).
 
 ## Scripts
 
-### `deploy-azure-openai.ps1`
+### `openai-deploy.ps1`
 Deploys the Azure OpenAI service with public access disabled, ready for private endpoint integration.
 
 **Usage:**
 ```powershell
 # Basic usage with defaults
-.\deploy-azure-openai.ps1 -Environment test
+.\openai-deploy.ps1 -Environment test
 
 # Override default resource group and location
-.\deploy-azure-openai.ps1 -Environment prod -ResourceGroup "d837ad-prod-networking" -Location "canadacentral"
+.\openai-deploy.ps1 -Environment prod -ResourceGroup "d837ad-prod-networking" -Location "canadacentral"
 ```
 
 **Parameters:**
@@ -23,7 +23,12 @@ Deploys the Azure OpenAI service with public access disabled, ready for private 
 
 **Creates:**
 - Azure OpenAI service: `d837ad-{Environment}-econ-llm-east`
-- GPT-4o deployment with Standard SKU and capacity 10
+- **Five model deployments:**
+  - **GPT-4o** (Standard SKU, capacity 150): Primary model for complex tasks
+  - **GPT-4o-mini** (GlobalStandard SKU, capacity 250): Cost-optimized model (94% savings)
+  - **GPT-5-mini** (GlobalStandard SKU, capacity 250): Enhanced reasoning capabilities
+  - **GPT-5-nano** (GlobalStandard SKU, capacity 250): Ultra-fast for simple tasks
+  - **text-embedding-3-large** (Standard SKU, capacity 150): High-quality embeddings
 
 ## Architecture
 

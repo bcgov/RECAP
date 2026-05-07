@@ -4,8 +4,8 @@ description: |
   compliance.
 spec:
   - name: PIA
-    status: draft
+    status: Complete
     last-updated: '2025-07-21T00:16:00.000Z'
   - name: STRA
-    status: submitted
-    last-updated: '2025-07-21T00:16:00.000Z'
+    status: Complete
+    last-updated: '2025-12-18T00:16:00.000Z'
