@@ -1,20 +1,20 @@
 # RECAP
 RECAP LLM Responsible Evaluation And Consolidated Analytics Platform
 
-[![Lifecycle:Stable](https://img.shields.io/badge/Lifecycle-Stable-97ca00)](https://github.com/bcgov/repomountie/blob/master/doc/lifecycle-badges.md)
+[![Lifecycle:Dormant](https://img.shields.io/badge/Lifecycle-Dormant-ff7f2a)](https://github.com/bcgov/repomountie/blob/master/doc/lifecycle-badges.md)
+[![BC Gov Azure](https://img.shields.io/badge/BC_Gov-Azure_Tenant-blue)](https://github.com/bcgov-c/tenant-azure-d837ad)
 
-The project is in a reliable state and major changes are unlikely to happen.
+This project has been archived and is not under active development, work continues under a separate BC Government private repository. This repository's existing implementation provides a foundation for future development efforts focused on responsible AI evaluation and analytics.
 
 ## Documentation
 
-📚 **Complete documentation is available in the [`documentation/`](./documentation/) folder:**
+**[Complete documentation index available in the `documentation/` folder](./documentation/README.md)**
 
-- **[Azure Landing Zone Documentation](./documentation/RECAP-Azure-LandingZone.md)** - Comprehensive Azure infrastructure architecture, cost analysis, and deployment details
-- **[Architecture Diagram](./documentation/RECAP-Architecture-Diagram.md)** - System architecture overview and component relationships  
-- **[VNet Solution](./documentation/RECAP-VNet-Solution.md)** - Virtual network configuration and security implementation
-- **[Connection Pooling Solution](./documentation/RECAP-Connection-Pooling-Solution.md)** - Optimized connection management for Azure OpenAI
-- **[Multi-Client Solution](./documentation/RECAP-multi-client-solution.md)** - Multi-tenant architecture and client isolation
-- **[GitOps Deployment Flow](./documentation/RECAP-GitOps-deployment-Flow.md)** - CI/CD pipeline and automated deployment processes
+Key documents:
+- **[Architecture & Cost Analysis](./documentation/RECAP-Azure-LandingZone.md)** - Infrastructure details and CA$0.83/day cost breakdown
+- **[Cost Control System](./documentation/Cost-Controls-Overview.md)** - Automated budget monitoring and cost protection
+- **[Testing Strategy](./cost-control/testing%20strategy.md)** - Comprehensive testing procedures
+- **[Setup Guide](./cost-control/setup-guide.md)** - Detailed installation instructions
 
 ## Repository Structure
 
@@ -27,11 +27,17 @@ RECAP/
 │   └── private-endpoint-deploy.ps1      ← Private endpoints
 ├── recap-llm/                           ← OpenAI service only
 │   └── openai-deploy.ps1                ← Azure OpenAI service deployment
-└── recap-web-proxy/                     ← Web app and proxy
-    ├── nginx-generate-config.ps1        ← Environment-specific nginx config
-    ├── acr-container-push.ps1            ← Container build and ACR push
-    ├── webapp-deploy.ps1                 ← Azure Web App deployment
-    └── proxy-llm-basic-test.ps1          ← End-to-end connectivity testing
+├── recap-web-proxy/                     ← Web app and proxy
+│   ├── nginx-generate-config.ps1        ← Environment-specific nginx config
+│   ├── acr-container-push.ps1            ← Container build and ACR push
+│   ├── webapp-deploy.ps1                 ← Azure Web App deployment
+│   └── proxy-llm-basic-test.ps1          ← End-to-end connectivity testing
+└── cost-control/                        ← Automated cost management
+    ├── azure-deploy-cost-control.ps1     ← Infrastructure deployment
+    ├── azure-configure-budget-integration.ps1 ← Budget and webhook setup
+    ├── azure-verify-cost-control.ps1     ← System validation and testing
+    ├── webapp-control.ps1                ← Manual webapp operations
+    └── monitor-costs.ps1                  ← Cost monitoring and reporting
 ```
 
 ### `recap-subnet-nsg/` - Networking Foundation
@@ -45,36 +51,17 @@ RECAP/
 **Handles Azure OpenAI service deployment only:**
 - Creates Cognitive Services account with BC Gov policy compliance
 - Configures public access disabled and network ACLs
-- Supports four model deployments: GPT-4o, GPT-4o-mini, GPT-5-mini, text-embedding-3-large
+- Supports five model deployments: GPT-4o, GPT-4o-mini, GPT-5-mini, GPT-5-nano, text-embedding-3-large
 - Enhanced rate limits with capacity 150-250 based on model requirements
 
-**Model Cost Comparison (2025 Pricing):**
-- **GPT-4o**: $2.50 input / $10.00 output per million tokens (Standard SKU, capacity 150)
-- **GPT-4o-mini**: $0.15 input / $0.60 output per million tokens (GlobalStandard SKU, capacity 250)
-- **GPT-5-mini**: Next-generation model with enhanced capabilities (GlobalStandard SKU, capacity 250)
+**Five AI Models Available:**
+- **GPT-4o**: Primary model for complex tasks (Standard SKU, capacity 150)
+- **GPT-4o-mini**: Cost-optimized model with 94% savings (GlobalStandard SKU, capacity 250)
+- **GPT-5-mini**: Next-generation enhanced reasoning (GlobalStandard SKU, capacity 250)
+- **GPT-5-nano**: Ultra-fast for simple operations (GlobalStandard SKU, capacity 250)
 - **text-embedding-3-large**: High-quality embeddings (Standard SKU, capacity 150)
-- **Cost savings**: gpt-4o-mini is ~94% cheaper than gpt-4o (16x cheaper per token)
 
-**Rate Limit Configuration:**
-Azure OpenAI rate limits are determined by the `--sku-capacity` parameter:
-- **Tokens per minute** = sku-capacity × 1,000
-- **Requests per minute** = sku-capacity × 10
-
-**Current RECAP Rate Limits:**
-- **GPT-4o** (capacity 150): 150,000 tokens/min, 1,500 requests/min
-- **GPT-4o-mini** (capacity 250): 250,000 tokens/min, 2,500 requests/min  
-- **GPT-5-mini** (capacity 250): 250,000 tokens/min, 2,500 requests/min
-- **text-embedding-3-large** (capacity 150): 150,000 tokens/min, 1,500 requests/min
-
-**Model Strategy:**
-- GPT-4o and GPT-4o-mini remain primary models for production workloads
-- GPT-5-mini provides next-generation capabilities alongside existing models
-- text-embedding-3-large provides enhanced embedding capabilities with higher rate limits
-
-**SKU Requirements:**
-- GPT-4o uses Standard SKU (regional data residency)
-- GPT-4o-mini and GPT-5-mini require GlobalStandard SKU in Canada East for better load balancing
-- text-embedding-3-large uses Standard SKU for consistent performance
+*See [Architecture Documentation](./documentation/RECAP-Azure-LandingZone.md) for detailed cost analysis and rate limits.*
 
 ### `recap-web-proxy/` - Application Layer
 **Manages the proxy application and web app deployment:**
@@ -85,6 +72,38 @@ Azure OpenAI rate limits are determined by the `--sku-capacity` parameter:
 - Docker container build and Azure Container Registry operations
 - Azure Web App with VNet integration
 - End-to-end testing and validation
+
+### `cost-control/` - Automated Cost Management
+**Provides budget monitoring and automated cost controls:**
+- Azure Automation Account with PowerShell runbooks for webapp lifecycle management
+- Budget-triggered automation that stops webapp when spending exceeds thresholds
+- Monthly scheduled restart on 1st day of billing cycle
+- Comprehensive testing and validation framework
+- Manual webapp control capabilities for operations
+
+**Cost Control Features:**
+- **Budget Integration**: Links owned budgets to action groups for automated triggers
+- **Webhook Automation**: Budget alerts trigger webhook → runbook → webapp shutdown
+- **Threshold Configuration**: 30% (warning), 40% (early action), 50% (investigate), 80% (shutdown)
+- **Monthly Reset**: Automated webapp restart on 1st day of each billing cycle
+- **Managed Identity**: Secure authentication with minimal required permissions (Website Contributor + Reader)
+
+**Budget Strategy:**
+- **Owned Budgets**: `budget-for-d837ad-{env}-cost-control-automation` (CA$250/month)
+- **Platform Budgets**: `budget-for-d837ad-{env}-from-product-registry` (read-only, do not modify)
+- **Cost Optimization**: ~$0.01/day for automation infrastructure
+
+**Deployment:**
+```powershell
+# Deploy cost control infrastructure
+.\cost-control\azure-deploy-cost-control.ps1 -Environment "prod"
+
+# Configure budget integration and webhooks
+.\cost-control\azure-configure-budget-integration.ps1 -Environment "prod"
+
+# Validate system configuration
+.\cost-control\azure-verify-cost-control.ps1 -Environment "prod" -DryRun
+```
 
 ## Quick Start Deployment
 
@@ -103,30 +122,18 @@ Azure OpenAI rate limits are determined by the `--sku-capacity` parameter:
 .\recap-web-proxy\acr-container-push.ps1 -Environment "prod"
 .\recap-web-proxy\webapp-deploy.ps1 -Environment "prod"
 
-# Step 4: Test deployment
+# Step 4: Deploy cost control automation
+.\cost-control\azure-deploy-cost-control.ps1 -Environment "prod"
+.\cost-control\azure-configure-budget-integration.ps1 -Environment "prod"
+
+# Step 5: Test complete deployment
 .\recap-web-proxy\proxy-llm-basic-test.ps1 -Environment "prod" -Model "all"
+.\cost-control\azure-verify-cost-control.ps1 -Environment "prod" -DryRun
 ```
 
 **Prerequisites:**
 - Azure CLI installed and authenticated (`az login`)
+- Azure PowerShell modules installed (`Connect-AzAccount` for cost control)
 - Docker Desktop running (for container operations)
 - PowerShell execution policy allows script execution
 - Contributor access to target Azure subscription
-
-## Troubleshooting
-
-### OpenAI Service Name Already Exists
-If you encounter an error that the OpenAI service name is already in use due to a previous deletion, you need to purge the soft-deleted service first:
-
-```powershell
-# Check for soft-deleted OpenAI services
-az cognitiveservices account list-deleted --query "[?contains(name, 'd837ad') && contains(name, 'econ-llm-east')]"
-
-# Purge the soft-deleted service to free up the name
-az cognitiveservices account purge --name "d837ad-{Environment}-econ-llm-east" --resource-group "d837ad-{Environment}-networking" --location "canadaeast"
-
-# Example for prod environment:
-az cognitiveservices account purge --name "d837ad-prod-econ-llm-east" --resource-group "d837ad-prod-networking" --location "canadaeast"
-```
-
-This immediately frees up the service name for reuse instead of waiting 30+ days for automatic purging.

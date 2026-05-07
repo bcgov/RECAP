@@ -15,6 +15,9 @@ Welcome to the RECAP (Responsible Evaluation And Consolidated Analytics Platform
 
 ### Deployment & Operations
 - **[GitOps Deployment Flow](./RECAP-GitOps-deployment-Flow.md)** - CI/CD pipeline and automated deployment processes
+- **[Cost Control System](./Cost-Controls-Overview.md)** - Automated budget monitoring and cost protection
+- **[Testing Strategy](../cost-control/testing%20strategy.md)** - Comprehensive testing procedures for all components
+- **[Setup Guide](../cost-control/setup-guide.md)** - Detailed installation instructions
 
 ## 🚀 Quick Start
 
@@ -30,17 +33,19 @@ The RECAP test environment operates at **CA$0.83 per day** with comprehensive se
 - **Container Registry**: CA$0.16/day  
 - **Private Endpoints**: CA$0.24/day
 - **Microsoft Defender**: CA$0.41/day
-- **GPT-4o-mini**: 94% cheaper than GPT-4o for most use cases
+- **AI Model Options**: GPT-4o, GPT-4o-mini (94% cheaper), GPT-5-mini, GPT-5-nano, text-embedding-3-large
+- **Cost Control**: Automated budget monitoring with webapp shutdown at 80% threshold
 
 ## 🏗️ Architecture Highlights
 
 - **Private Network Access**: All AI services behind private endpoints
 - **Multi-Environment**: Separate test/prod with VNet isolation  
 - **Container-Based**: Docker + Azure Container Registry
-- **Cost-Optimized**: GPT-4o-mini for 94% cost savings
+- **Cost-Optimized**: Five AI models including ultra-efficient GPT-4o-mini and GPT-5-nano
 - **BC Gov Compliant**: SPANBC network access, security monitoring
+- **Automated Cost Control**: Budget-triggered automation prevents runaway costs
 
 ---
 
-**Last Updated**: August 6, 2025  
-**Status**: Active Development
+**Last Updated**: May 6, 2026  
+**Status**: Production Ready

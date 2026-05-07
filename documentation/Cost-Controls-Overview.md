@@ -38,6 +38,7 @@ The finished system significantly exceeds the original scope with:
 - **Production Environment**: `budget-for-d837ad-prod-cost-control-automation` (CA$250/month)
 - **Alert Thresholds**:
   - 30% - Early warning notification
+  - 40% - Early action notification
   - 50% - Investigation required notification  
   - 80% - **Automatic webapp shutdown**
 
@@ -130,7 +131,8 @@ The finished system significantly exceeds the original scope with:
 ### **Cost Savings Achieved**
 Based on Azure OpenAI pricing analysis in the codebase:
 - **GPT-4o-mini**: 94% cost reduction vs GPT-4o
-- **GPT-5-nano**: Fastest response times for simple tasks
+- **GPT-5-nano**: Ultra-fast response times for simple tasks with cost efficiency
+- **text-embedding-3-large**: Enhanced embedding capabilities with optimized rate limits
 - **Automatic Shutdown**: Prevents runaway costs from forgotten services
 - **ROI**: Infrastructure costs are 0.6% of monthly budget allocation
 
@@ -151,6 +153,11 @@ Based on Azure OpenAI pricing analysis in the codebase:
 - Review cost trends and usage patterns
 - Validate auto-scaling configurations
 - No immediate action required
+
+**40% Alert (CA$100)** - Early Action
+- Begin proactive cost investigation
+- Review recent AI model usage patterns
+- Consider switching to cost-optimized models (GPT-4o-mini, GPT-5-nano)
 
 **50% Alert (CA$125)** - Investigation Required  
 - Detailed cost analysis and projection
@@ -194,10 +201,11 @@ The cost control system integrates seamlessly with the RECAP web proxy infrastru
 
 ### **Azure OpenAI Cost Optimization**
 Supports the RECAP AI model cost structure:
-- **GPT-4o**: $2.50/$10.00 per million tokens
-- **GPT-4o-mini**: $0.15/$0.60 per million tokens (94% savings)
-- **GPT-5-mini**: Next-gen model with enhanced reasoning
-- **GPT-5-nano**: Ultra-fast nano model for simple tasks
+- **GPT-4o**: $2.50/$10.00 per million tokens (Standard SKU)
+- **GPT-4o-mini**: $0.15/$0.60 per million tokens (GlobalStandard SKU) - 94% savings
+- **GPT-5-mini**: Next-gen model with enhanced reasoning (GlobalStandard SKU)
+- **GPT-5-nano**: Ultra-fast nano model for simple tasks (GlobalStandard SKU)
+- **text-embedding-3-large**: High-quality embeddings (Standard SKU)
 
 ## Disaster Recovery
 
@@ -262,4 +270,4 @@ The system successfully protects against runaway costs while maintaining the ope
 
 ---
 
-*This document represents the status of the RECAP Cost Control System April 2026.*
+*This document represents the status of the RECAP Cost Control System May 2026.*
